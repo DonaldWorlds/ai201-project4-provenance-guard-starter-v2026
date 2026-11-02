@@ -39,6 +39,16 @@
 <!-- The path a submission takes, from arriving to the label a reader sees.
      Six or seven steps — this is the trace you wrote in Milestone 1. -->
 
+| # | Step | What it adds |
+|---|---|---|
+| 1 | **Arrival & identity** — `POST /submit` receives `{text, creator_id}`; the route mints a `content_id` (uuid4) | Text becomes a *request with a sender and a handle*. Without the handle there is no appeal later. |
+| 2 | **The gate** — `text` present, non-empty, ≥ 40 words, ≤ 10 000 words; otherwise `400` + `audit.log_rejection` | A guarantee that everything downstream gets scoreable text — and a *trace of the refusal*. In unit 8 the rate limiter sits just in front of this. |
+| 3 | **Signal one** — `detector.model_signal(text)` | A number for how *predictable* the text is to a language model. |
+| 4 | **Signal two** — `stylometry.style_signal(text)` | A number for the *shape* of the text, computed without reading a word of it. |
+| 5 | **The combining rule** — `scoring.combine_signals(model_score, style_score)` | One decision variable — and the place where "which way do I want to be wrong" actually gets encoded. |
+| 6 | **The label** — `scoring.score_to_label(score)` | Translation from a number into a sentence a person can act on. |
+| 7 | **The record and the answer** — `audit.log_decision(...)` writes nine fields to `logs/audit.jsonl`; the route returns the JSON | Durability and recourse. The decision outlives the request, and the writer leaves holding the id they need to challenge it. |
+
 
 
 ---
@@ -53,19 +63,54 @@
 
 ### Signal one — the model signal
 
-**What it measures:**
+**What it measures:** The perplexity of the text under a local gpt2 — mean
+negative log-likelihood per token, exponentiated, then squashed onto 0–1 by a
+logistic on log-perplexity (midpoint 45, steepness 1.6). Higher means more
+predictable, which the signal reads as more likely AI.
 
-**Why that might differ between human and AI writing:**
+**Why that might differ between human and AI writing:** A language model writes
+by repeatedly picking a high-probability next token, so its own output sits in
+the dense part of its own distribution. Human writing takes low-probability
+turns more often — the specific rather than the typical, the abrupt turn, the
+odd word that was the right one.
 
-**What it can't see:**
+**What it can't see:** **It measures predictability, not authorship.** What it
+actually rewards is common words in short, ordinary sentences — so someone
+writing in a second language and sticking to vocabulary they're sure of, a
+younger writer, or anyone writing plainly on purpose scores about as
+machine-like as a machine does. The inverse bites too: dense, ornate prose full
+of rare words scores *human*, because rare words are exactly what the model
+fails to predict. Two further limits — it is gpt2 judging text from far newer
+models, and it truncates at 400 tokens, so a long submission is judged on its
+first ~300 words.
 
 ### Signal two — the style signal
 
-**What it measures:**
+**What it measures:** The surface shape of the text and nothing else —
+sentence-length spread (standard deviation over mean), type-token ratio, and
+punctuation density and variety, combined into one 0–1 score pointing the same
+direction as signal one. No semantics at any point.
 
-**Why that might differ between human and AI writing:**
+**Why that might differ between human and AI writing:** "Most likely next
+token" averages toward even, mid-length sentences and a narrower band of
+vocabulary. Human writing is lumpier — a three-word sentence next to a
+forty-word one — and idiosyncratic punctuation like semicolons and em dashes
+varies far more between people than between samples from one model.
 
-**What it can't see:**
+**What it can't see:** **It cannot read.** It has no idea what the text says,
+so any edit that changes the shape while leaving the substance alone moves it:
+adding typos, splitting or joining sentences, pasting in a block quotation,
+sprinkling em dashes. Every one of those is cheap and can be done on purpose.
+Separately, type-token ratio falls mechanically as text gets longer, so two
+submissions of different lengths aren't comparable on it and length alone can
+masquerade as signal.
+
+**Why this pairing is weaker than it looks.** The two signals are not
+independent. One cheap edit moves both: adding typos raises perplexity (pulling
+signal one toward "human") *and* raises type-token ratio (pulling signal two
+toward "human"). So agreement between them is not the confirmation it appears
+to be — which is the whole problem in the false-positive trace in
+[MILESTONE1.md](MILESTONE1.md).
 
 ### The combining rule
 
