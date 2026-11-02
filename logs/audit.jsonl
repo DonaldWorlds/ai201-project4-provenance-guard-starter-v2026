@@ -1,0 +1,8 @@
+{"timestamp": "2026-11-02T06:18:42+00:00", "content_id": "0a155ec5-1b59-4d10-a208-bf59e0dc7a2a", "creator_id": "donald", "guess": "pending", "model_score": 0.5175, "style_score": null, "combined_score": null, "label": "Not judged yet — scoring lands in Milestones 4 and 5.", "status": "decided", "word_count": 85}
+{"timestamp": "2026-11-02T06:18:42+00:00", "creator_id": "donald", "event": "rejected", "status": "rejected", "reason": "missing_text", "field": "text"}
+{"timestamp": "2026-11-02T06:18:42+00:00", "creator_id": "donald", "event": "rejected", "status": "rejected", "reason": "missing_text", "field": "text"}
+{"timestamp": "2026-11-02T06:18:42+00:00", "creator_id": "donald", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-02T06:18:42+00:00", "creator_id": "unknown", "event": "rejected", "status": "rejected", "reason": "missing_creator_id", "field": "creator_id"}
+{"timestamp": "2026-11-02T06:18:42+00:00", "creator_id": "unknown", "event": "rejected", "status": "rejected", "reason": "missing_creator_id", "field": "creator_id"}
+{"timestamp": "2026-11-02T06:19:09+00:00", "content_id": "3875cdbd-f414-4a75-b951-49abdc005c6c", "creator_id": "donald", "guess": "pending", "model_score": 0.5175, "style_score": null, "combined_score": null, "label": "Not judged yet — scoring lands in Milestones 4 and 5.", "status": "decided", "word_count": 85}
+{"timestamp": "2026-11-02T06:19:09+00:00", "creator_id": "donald", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}

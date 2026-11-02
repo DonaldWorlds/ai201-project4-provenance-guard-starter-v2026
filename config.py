@@ -47,6 +47,22 @@ DETECTOR_MODEL = os.getenv("AI201_DETECTOR_MODEL", "gpt2")
 DETECTOR_MAX_TOKENS = 400
 
 
+# ─── Input limits (decided in Milestone 1) ───────────────────────────────────
+# What /submit will accept as scoreable text.
+#
+# Below MIN_WORDS the model signal is noise: gpt2 needs a few sentences before
+# perplexity means anything, and detector.perplexity() raises outright under
+# three tokens. Above MAX_WORDS the request costs more than it returns —
+# DETECTOR_MAX_TOKENS means only the first ~300 words get read either way.
+#
+# Anything outside this range is a 400 AND an audit.log_rejection. The refusal
+# has to leave a trace: an attack that shows up only as an absence is one you
+# can't diagnose.
+
+MIN_WORDS = 40
+MAX_WORDS = 10_000
+
+
 # ─── Scoring (Milestone 4) ───────────────────────────────────────────────────
 # How much each signal counts toward the combined score.
 #

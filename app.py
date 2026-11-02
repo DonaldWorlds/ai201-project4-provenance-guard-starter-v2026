@@ -150,6 +150,18 @@ def health():
 
 # ── YOU BUILD THIS ────────────────────────────────────────────────────────────
 
+def _reject(creator_id: str, error: str, field: str, message: str):
+    """
+    Refuse a request, and leave a trace of the refusal.
+
+    The log_rejection call is the point. A 400 that returns and records
+    nothing is invisible in unit 8: a thousand malformed requests and a quiet
+    afternoon look identical in the log.
+    """
+    audit.log_rejection(creator_id=creator_id, reason=error, field=field)
+    return jsonify({"error": error, "message": message, "field": field}), 400
+
+
 @app.post("/submit")
 # @limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute;{config.RATE_LIMIT_PER_DAY}/day")
 def submit():
@@ -199,17 +211,98 @@ def submit():
     what should this do when `text` is missing, empty, or enormous? A crash on
     a malformed input is one of the most common real failures there is.
     """
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    # A body that parses as JSON but isn't an object — a bare list or string —
+    # has no .get. Same guard the rate-limit key function uses, same reason.
+    if not isinstance(payload, dict):
+        payload = {}
 
-    # TODO: delete this and build the route.
+    text = payload.get("text")
+    creator_id = payload.get("creator_id")
+
+    # ── The gate ─────────────────────────────────────────────────────────────
+    # Nothing past this point has to wonder whether it got scoreable text.
+    if not isinstance(creator_id, str) or not creator_id.strip():
+        return _reject(
+            "unknown", "missing_creator_id", "creator_id",
+            "Every submission needs a creator_id so the decision can be "
+            "traced back to who sent it.",
+        )
+    creator_id = creator_id.strip()
+
+    if not isinstance(text, str) or not text.strip():
+        return _reject(
+            creator_id, "missing_text", "text",
+            "Send the text you want checked in a 'text' field.",
+        )
+
+    word_count = len(text.split())
+    if word_count < config.MIN_WORDS:
+        return _reject(
+            creator_id, "text_too_short", "text",
+            f"Need at least {config.MIN_WORDS} words to say anything useful; "
+            f"got {word_count}. Under that the signal is noise, and a guess "
+            f"built on noise is worse than no guess.",
+        )
+    if word_count > config.MAX_WORDS:
+        return _reject(
+            creator_id, "text_too_long", "text",
+            f"Limit is {config.MAX_WORDS:,} words; got {word_count:,}.",
+        )
+
+    # The handle. Minted before anything can fail, so that whatever happens
+    # next is addressable — /appeal has nothing to work with without it.
+    content_id = str(uuid.uuid4())
+
+    # ── Signal one ───────────────────────────────────────────────────────────
+    # Imported here rather than at the top: it pulls in torch, and app.py
+    # importing cheaply is what lets test.py check the service quickly.
+    import detector
+
+    try:
+        model_score = detector.model_signal(text)
+    except detector.DetectorUnavailable as exc:
+        audit.log_rejection(
+            creator_id=creator_id, reason="detector_unavailable",
+            content_id=content_id, detail=str(exc),
+        )
+        return jsonify({
+            "error": "detector_unavailable",
+            "message": "The detector model isn't available right now, so this "
+                       "text hasn't been judged. Nothing has been recorded "
+                       "against it.",
+        }), 503
+
+    # ── Milestones 4 and 5 fill these in ─────────────────────────────────────
+    # They're in the response as nulls rather than absent on purpose. The
+    # shape stays the same from the first submission to the last, so entries
+    # from before a change and after it stay comparable — the same reason
+    # audit.py carries all nine fields from unit 7.
+    style_score = None                     # Milestone 4 — stylometry.style_signal
+    confidence = None                      # Milestone 4 — scoring.combine_signals
+    guess = "pending"                      # Milestone 5 — scoring.score_to_label
+    label = "Not judged yet — scoring lands in Milestones 4 and 5."
+
+    audit.log_decision(
+        content_id=content_id,
+        creator_id=creator_id,
+        guess=guess,
+        model_score=model_score,
+        style_score=style_score,
+        combined_score=confidence,
+        label=label,
+        status="decided",
+        word_count=word_count,
+    )
+
     return jsonify({
-        "error": "not_implemented",
-        "message": "POST /submit isn't built yet — see the TODO in app.py.",
-        "you_sent": {
-            "text_length": len(payload.get("text", "")),
-            "creator_id": payload.get("creator_id"),
-        },
-    }), 501
+        "content_id": content_id,
+        "guess": guess,
+        "confidence": confidence,
+        "label": label,
+        "model_score": model_score,
+        "style_score": style_score,
+    })
 
 
 @app.post("/appeal")
