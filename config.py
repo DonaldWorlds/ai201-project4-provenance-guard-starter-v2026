@@ -73,6 +73,17 @@ MAX_WORDS = 10_000
 WEIGHT_MODEL_SIGNAL = 0.5
 WEIGHT_STYLE_SIGNAL = 0.5
 
+# When the two signals disagree by more than this, they are treated as a split
+# rather than as a reading to average. 0.25 is a quarter of the whole scale —
+# below it the two are telling the same story with different emphasis; above it
+# they are not describing the same text.
+DISAGREEMENT_GAP = 0.25
+
+# On a split, how much of the answer comes from the MORE HUMAN of the two.
+# 0.65 leans toward the writer without ignoring the other signal outright.
+# This is the Milestone 1 decision — which way to be wrong — as a number.
+SPLIT_PULL_TO_HUMAN = 0.65
+
 
 # ─── Thresholds (Milestone 5) ────────────────────────────────────────────────
 # Where one label becomes another. Scores run 0.0 (confidently human) to 1.0

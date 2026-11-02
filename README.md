@@ -117,9 +117,19 @@ to be — which is the whole problem in the false-positive trace in
 <!-- Write the rule in words, then give the numbers. What happens when the two
      signals disagree? -->
 
-**The rule:**
+**The rule:** Average the two signals. But when they disagree by more than a
+quarter of the scale, stop averaging and lean toward whichever one read the
+text as more human — because a split means the evidence isn't there, and
+Milestone 1 decided which way to be wrong.
 
 **The numbers:**
+
+| Setting | Value | Why |
+|---|---|---|
+| `WEIGHT_MODEL_SIGNAL` | 0.50 | Neither signal earned the bigger vote. One is a model with a documented bias against plain writing; the other can't read. |
+| `WEIGHT_STYLE_SIGNAL` | 0.50 | As above. |
+| `DISAGREEMENT_GAP` | 0.25 | A quarter of the whole scale. Below it the two are telling the same story with different emphasis; above it they are not describing the same text. |
+| `SPLIT_PULL_TO_HUMAN` | 0.65 | On a split, 65% of the answer comes from the more human reading. This is "lean toward the writer" written as a number — it is what the decision costs. |
 
 **Where it lives:** `scoring.py::combine_signals`
 
@@ -128,6 +138,73 @@ to be — which is the whole problem in the false-positive trace in
 
 **A case where my two signals split, and what my rule does with it:**
 
+`samples/formal_human.txt` — a dense, formal paragraph about legal doctrine,
+written by a person.
+
+| | |
+|---|---|
+| `model_score` | **0.5019** — a coin flip. Rare words and long clauses are exactly what gpt2 fails to predict, so formality reads as *neither* to signal one. |
+| `style_score` | **0.2403** — confidently human. Varied sentence lengths (spread 0.449), a wide vocabulary (ttr 0.750) and heavy expressive punctuation (12.77 per 100 words). |
+| gap | **0.262** — just over `DISAGREEMENT_GAP`, so the split rule fires. |
+| plain average would give | 0.3711 → **unsure** |
+| my rule gives | **0.3319** → **high-confidence human** |
+
+This is the case the rule exists for. The two signals are not describing the
+same text, and the one that is more sure of itself is the one saying "human" —
+so the answer goes there rather than splitting the difference into a shrug.
+
+It also matters for label coverage: **this is the only one of my five
+calibration inputs that reaches high-confidence human at all.** Under a plain
+weighted average nothing scores at or below 0.35, so that label would be
+defined and unreachable — criterion 5 failed before the thresholds were even
+tested.
+
+### What the calibration run actually showed
+
+`python calibrate.py` — both signals and the three raw style measures over
+`samples/`, all five inputs within 113–126 words so the length defect in
+type-token ratio can't masquerade as signal.
+
+```
+sample                 words  spread    ttr   punct   model   style  combined
+-----------------------------------------------------------------------------
+clearly_ai               126   0.287  0.690    5.24  0.8748  0.5462    0.6612
+clearly_human            117   0.557  0.692    7.52  0.4383  0.3609    0.3996
+formal_human             112   0.449  0.750   12.77  0.5019  0.2403    0.3319
+lightly_edited_ai        117   0.279  0.726    3.76  0.7491  0.5617    0.6554
+plain_human              113   0.316  0.655    0.00  0.8275  0.6880    0.7577
+
+(spread / ttr / punct are RAW measures — higher means more human)
+(model / style / combined are SCORES — higher means more AI)
+```
+
+**The result I did not want: `plain_human` scores 0.7577 — higher than the
+clearly-AI text.**
+
+That input is a short reflection about a first job, written plainly in simple
+English, of the kind someone writing in a second language produces. It is the
+Mara case from [MILESTONE1.md](MILESTONE1.md), and it landed on the first run
+rather than being hunted for.
+
+Both signals convict her, for the same reason and independently of each other:
+
+- `model_score` 0.8275 — common words in short sentences are easy to predict.
+- `style_score` 0.6880 — and `punct 0.00`, because that paragraph contains no
+  commas at all. My punctuation measure reads an absence of expressive
+  punctuation as machine-like, when what it actually marks here is someone
+  writing in vocabulary and structures they're confident of.
+
+**No combining rule fixes this.** The gap between the two signals is 0.140 —
+the second *smallest* in the table — so as far as `combine_signals` can tell,
+this is two independent methods agreeing. It is the failure mode Milestone 1
+named: agreement is not confirmation when both signals are measuring the same
+underlying thing, and what both of mine are really measuring is *writes
+plainly*.
+
+The fix has to be upstream (recalibrate `detector.midpoint`, or stop treating
+zero punctuation as evidence) or downstream (a wider unsure band in Milestone
+5). It is not a scoring-rule problem, and I'd have wasted the milestone trying
+to solve it there.
 
 
 ---

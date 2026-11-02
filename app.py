@@ -30,6 +30,8 @@ from flask import Flask, jsonify, request
 
 import audit
 import config
+import scoring
+import stylometry
 
 app = Flask(__name__)
 
@@ -273,15 +275,14 @@ def submit():
                        "against it.",
         }), 503
 
-    # ── Milestones 4 and 5 fill these in ─────────────────────────────────────
-    # They're in the response as nulls rather than absent on purpose. The
-    # shape stays the same from the first submission to the last, so entries
-    # from before a change and after it stay comparable — the same reason
-    # audit.py carries all nine fields from unit 7.
-    style_score = None                     # Milestone 4 — stylometry.style_signal
-    confidence = None                      # Milestone 4 — scoring.combine_signals
+    # ── Signal two, and the score ────────────────────────────────────────────
+    # Reads the text as text. No model, no download, nothing to fail — so no
+    # guard around it the way signal one needs one.
+    style_score = stylometry.style_signal(text)
+    confidence = scoring.combine_signals(model_score, style_score)
+
     guess = "pending"                      # Milestone 5 — scoring.score_to_label
-    label = "Not judged yet — scoring lands in Milestones 4 and 5."
+    label = "Not judged yet — the label lands in Milestone 5."
 
     audit.log_decision(
         content_id=content_id,

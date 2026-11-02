@@ -52,11 +52,27 @@ def combine_signals(model_score: float, style_score: float) -> float:
     The weights in config.py are placeholders. Change them, or ignore them and
     write a different rule.
     """
-    # TODO: replace this
-    return (
+    blended = (
         config.WEIGHT_MODEL_SIGNAL * model_score
         + config.WEIGHT_STYLE_SIGNAL * style_score
     )
+
+    gap = abs(model_score - style_score)
+    if gap <= config.DISAGREEMENT_GAP:
+        # The two agree. Average them and move on.
+        return round(min(max(blended, 0.0), 1.0), 4)
+
+    # They split, so one of them is wrong and the score can't say which. The
+    # answer leans toward whichever read the text as more human, because
+    # Milestone 1 decided which way to be wrong and this is where that gets
+    # paid for: fewer wrong accusations, and more AI text getting through.
+    more_human = min(model_score, style_score)
+    more_ai = max(model_score, style_score)
+    pulled = (
+        config.SPLIT_PULL_TO_HUMAN * more_human
+        + (1.0 - config.SPLIT_PULL_TO_HUMAN) * more_ai
+    )
+    return round(min(max(pulled, 0.0), 1.0), 4)
 
 
 def score_to_label(score: float) -> tuple[str, str]:
