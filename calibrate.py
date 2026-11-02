@@ -24,7 +24,8 @@ SAMPLES = Path(__file__).parent / "samples"
 
 
 def main() -> int:
-    files = sorted(SAMPLES.glob("*.txt"))
+    # rglob, so anything dropped into samples/mine/ is picked up too.
+    files = sorted(SAMPLES.rglob("*.txt"))
     if not files:
         print(f"No .txt files in {SAMPLES}")
         return 1

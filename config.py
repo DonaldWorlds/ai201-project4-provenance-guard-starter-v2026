@@ -98,8 +98,19 @@ SPLIT_PULL_TO_HUMAN = 0.65
 # getting through. There is no setting that avoids the trade — only settings
 # that decide who pays for it.
 
-HUMAN_THRESHOLD = 0.35
+# Set in Milestone 5, from the calibration run in samples/.
+#   HUMAN_THRESHOLD 0.40 — clearly_human lands at 0.3996 and formal_human at
+#   0.3319. At the old 0.35 an obviously human personal narrative got "unsure",
+#   which is a worse answer than it deserves. No AI sample is near 0.40.
+#
+#   AI_THRESHOLD 0.65 — kept. Raising it to spare plain_human would also have
+#   spared both AI samples (0.6612 and 0.6554), since the human scored HIGHER
+#   than either of them. That was fixed in the style signal instead.
+HUMAN_THRESHOLD = 0.40
 AI_THRESHOLD = 0.65
+
+# The longest appeal the service will accept, in characters.
+MAX_APPEAL_CHARS = 2000
 
 # ⚠️ One thing that catches people out in Milestone 5. A weighted average can
 # only land between its two inputs — so while `style_signal` is still the stub

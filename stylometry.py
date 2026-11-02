@@ -176,14 +176,21 @@ def style_signal(text: str) -> float:
     type-token ratio, splitting a sentence raises the spread, pasting in a
     quotation moves all three.
     """
-    parts = {
-        "ttr": _to_ai_score(type_token_ratio(text), *_TTR_RANGE),
-        "punct": _to_ai_score(punctuation_density(text), *_PUNCT_RANGE),
-    }
+    parts = {"ttr": _to_ai_score(type_token_ratio(text), *_TTR_RANGE)}
 
-    measurable_sentences = len([s for s in sentences(text) if words(s)]) >= 2
-    if measurable_sentences:
+    if len([s for s in sentences(text) if words(s)]) >= 2:
         parts["spread"] = _to_ai_score(sentence_length_spread(text), *_SPREAD_RANGE)
+
+    # ⚠️ Corrected after the Milestone 4 calibration run — see the README.
+    # Text with no expressive punctuation at all scores 0.00 here, which the
+    # range below maps to "maximally machine-like". The calibration data says
+    # that is backwards: the two AI samples scored 5.24 and 3.76, because
+    # generated prose is comma-heavy. A paragraph with no commas is not
+    # AI-shaped, it is unmeasured on this axis — so the term drops out rather
+    # than convicting. Same rule as spread, same reason.
+    density = punctuation_density(text)
+    if density > 0:
+        parts["punct"] = _to_ai_score(density, *_PUNCT_RANGE)
 
     total_weight = sum(_WEIGHTS[k] for k in parts)
     score = sum(_WEIGHTS[k] * v for k, v in parts.items()) / total_weight

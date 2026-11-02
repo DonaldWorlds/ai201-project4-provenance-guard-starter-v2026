@@ -281,8 +281,7 @@ def submit():
     style_score = stylometry.style_signal(text)
     confidence = scoring.combine_signals(model_score, style_score)
 
-    guess = "pending"                      # Milestone 5 — scoring.score_to_label
-    label = "Not judged yet — the label lands in Milestone 5."
+    guess, label = scoring.score_to_label(confidence)
 
     audit.log_decision(
         content_id=content_id,
@@ -326,14 +325,65 @@ def appeal():
     to the person on the other end. It's the only thing standing between a
     wrong accusation and nothing at all.
     """
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        payload = {}
 
-    # TODO: delete this and build the route.
+    content_id = payload.get("content_id")
+    reasoning = payload.get("reasoning")
+
+    if not isinstance(content_id, str) or not content_id.strip():
+        return _reject(
+            "unknown", "missing_content_id", "content_id",
+            "Send the reference id that came back with the decision you want "
+            "to challenge.",
+        )
+    content_id = content_id.strip()
+
+    if not isinstance(reasoning, str) or not reasoning.strip():
+        return _reject(
+            "unknown", "missing_reasoning", "reasoning",
+            "Tell us why you think we got this wrong.",
+        )
+    reasoning = reasoning.strip()
+
+    if len(reasoning) > config.MAX_APPEAL_CHARS:
+        return _reject(
+            "unknown", "reasoning_too_long", "reasoning",
+            f"Appeals are limited to {config.MAX_APPEAL_CHARS:,} characters; "
+            f"yours is {len(reasoning):,}.",
+        )
+
+    # A mistyped id has to be loud. Failing quietly here looks exactly like a
+    # broken endpoint, and the writer would never learn which it was — their
+    # appeal would simply have never existed.
+    entries = audit.entries_for(content_id)
+    if not entries:
+        audit.log_rejection(
+            creator_id="unknown", reason="unknown_content_id",
+            content_id=content_id,
+        )
+        return jsonify({
+            "error": "unknown_content_id",
+            "message": "We have no decision recorded under that reference id. "
+                       "Check it against the response you were given.",
+        }), 404
+
+    # The appeal is filed under whoever the original decision belongs to, not
+    # whoever sent the appeal — so the log reads as one story per content_id.
+    creator_id = entries[0].get("creator_id", "unknown")
+    entry = audit.log_appeal(
+        content_id=content_id, creator_id=creator_id, reasoning=reasoning,
+    )
+
     return jsonify({
-        "error": "not_implemented",
-        "message": "POST /appeal isn't built yet — see the TODO in app.py.",
-        "you_sent": payload,
-    }), 501
+        "content_id": content_id,
+        "status": "under_review",
+        "message": "Your appeal has been recorded and this item is now waiting "
+                   "for a person to review it. The original result stays in "
+                   "the record alongside your appeal — nothing was overwritten.",
+        "appeal_recorded_at": entry["timestamp"],
+    })
 
 
 # ── Already works ─────────────────────────────────────────────────────────────

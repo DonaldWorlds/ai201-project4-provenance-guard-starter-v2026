@@ -201,10 +201,47 @@ named: agreement is not confirmation when both signals are measuring the same
 underlying thing, and what both of mine are really measuring is *writes
 plainly*.
 
-The fix has to be upstream (recalibrate `detector.midpoint`, or stop treating
-zero punctuation as evidence) or downstream (a wider unsure band in Milestone
-5). It is not a scoring-rule problem, and I'd have wasted the milestone trying
-to solve it there.
+It is not a scoring-rule problem, and I'd have wasted the milestone trying to
+solve it there.
+
+### The fix, in Milestone 5 — and what it cost
+
+The diagnosis pointed at one measure. `punctuation_density` scored
+`plain_human` at **0.00**, and the range mapped that to "maximally
+machine-like". The calibration data says that is backwards: the two AI samples
+scored **5.24** and **3.76**, because generated prose is comma-heavy. A
+paragraph with no commas is not AI-shaped — it is *unmeasured* on that axis.
+
+So the punctuation term now drops out when there is no expressive punctuation
+to measure, exactly as the spread term already dropped out below two
+sentences. Same principle both times: **not knowing is not the same as knowing
+something bad.**
+
+```
+sample                 words  spread    ttr   punct   model   style  combined
+-----------------------------------------------------------------------------
+clearly_ai               126   0.287  0.690    5.24  0.8748  0.5462    0.6612
+clearly_human            117   0.557  0.692    7.52  0.4383  0.3609    0.3996
+formal_human             112   0.449  0.750   12.77  0.5019  0.2403    0.3319
+lightly_edited_ai        117   0.279  0.726    3.76  0.7491  0.5617    0.6554
+plain_human              113   0.316  0.655    0.00  0.8275  0.5200    0.6276   <- was 0.7577
+```
+
+`plain_human` moves from **0.7577 (high-confidence AI)** to **0.6276
+(unsure)**, and both AI samples are still caught. It is the only row that
+changed, which is what a targeted fix should look like.
+
+**What this cost, stated plainly:** I changed a measure after seeing how it
+scored my test set. That is tuning to the test, and the honest defence is that
+the *reason* came from the data rather than from the result — AI prose is
+comma-heavy, so a comma-free paragraph is evidence of nothing. If unit 8's
+attack set strips punctuation deliberately, this change makes those inputs
+score **more** human, and that is a cost I have taken on knowingly.
+
+**And the margin is thin.** `clearly_ai` sits at **0.6612**, just 0.011 above
+`AI_THRESHOLD`. Any upward nudge to that threshold stops it being detected at
+all. The split rule bought a reachable human label and paid for it in headroom
+at the top.
 
 
 ---
@@ -218,16 +255,50 @@ to solve it there.
 
 | Label | Score range | The exact text a reader sees |
 |---|---|---|
-| high-confidence human |  |  |
-| unsure |  |  |
-| high-confidence AI |  |  |
+| high-confidence human | 0.00 – 0.40 | "This reads as a person's writing. Our checks found no sign that a machine wrote it, and nothing further happens with this piece." |
+| unsure | 0.40 – 0.65 | "Our checks did not agree with each other on this one, so we have not reached any conclusion about it and nothing is on file either way. These checks are unreliable across a wide range of perfectly ordinary writing, and we would rather say so than guess. If you would like a person to look at it, use the reference id in this response." |
+| high-confidence AI | 0.65 – 1.00 | "Our checks suggest this was probably written by an AI tool. We can be wrong about this — these checks are known to misread writing that is plain, short, or written in a second language — so if you wrote it yourself, use the reference id in this response and a person will read it properly." |
+
+All three are reachable. The text that reaches each:
+
+| Sample | Score | Label |
+|---|---|---|
+| `samples/formal_human.txt` | 0.3319 | high-confidence human |
+| `samples/clearly_human.txt` | 0.3996 | high-confidence human |
+| `samples/plain_human.txt` | 0.6276 | unsure |
+| `samples/lightly_edited_ai.txt` | 0.6554 | high-confidence AI |
+| `samples/clearly_ai.txt` | 0.6612 | high-confidence AI |
 
 **Why I worded the "unsure" one this way:**
 <!-- It's the hardest of the three. It has to admit uncertainty without
      sounding like an accusation, because the person reading it may well have
      written every word themselves. -->
 
+I read all three back as the writer receiving them before settling on this
+wording, and the first draft of the unsure label failed that test badly.
 
+It had said: *"that usually means the writing is plain, short, or in a style
+these checks handle badly."* I meant that as exoneration — here is why the
+tool struggled. Read as the person being told it, it is a review of my prose:
+plain, short, badly styled. It also said nothing had been recorded and then
+invited me to appeal, which reads as a contradiction — if there is nothing on
+file, what am I appealing against?
+
+So the uncertainty now sits entirely on the tool: *"These checks are
+unreliable across a wide range of perfectly ordinary writing, and we would
+rather say so than guess."* That sentence describes the checks and never the
+reader. "A wide range of ordinary writing" is deliberate too — it says the
+problem is common, rather than something about them.
+
+The same pass caught a smaller problem in the human label, which had ended
+"nothing has been recorded against it" — reassurance that accidentally
+announces a file could exist. It now ends "nothing further happens with this
+piece."
+
+The AI label survived almost unchanged, and the reason is worth keeping:
+naming exactly who the checks misread — *plain, short, or written in a second
+language* — is the most useful sentence in all three, because it hands a
+wrongly-accused person a specific argument instead of a vague right of appeal.
 
 ---
 
@@ -243,14 +314,24 @@ to solve it there.
      two off the response, so leaving them out costs you next unit's
      diagnostics. -->
 
+`samples/plain_human.txt` on purpose — the input that nearly got labelled AI.
+This is what the person it was nearly wrong about actually sees.
+
 ```bash
 $ curl -X POST http://127.0.0.1:5000/submit \
   -H "Content-Type: application/json" \
-  -d '{"text": "...", "creator_id": "..."}'
+  -d '{"text": "I want to write about my first job. I worked in a small shop near my house. The owner was a kind man. He taught me how to count money and how to talk to customers. I was very shy at first. I did not like to speak to people I did not know. But after some weeks it became easier. I learned many new words in English there. Some customers were patient with me and some were not. The kind ones helped me more than any class did. I still think about that shop. It closed two years ago. I was sad when I heard the news because that place changed me.", "creator_id": "mara"}'
 ```
 
 ```json
-
+{
+    "confidence": 0.6276,
+    "content_id": "a2c9033b-2c93-42e7-9949-e3ca90fd1491",
+    "guess": "unsure",
+    "label": "Our checks did not agree with each other on this one, so we have not reached any conclusion about it and nothing is on file either way. These checks are unreliable across a wide range of perfectly ordinary writing, and we would rather say so than guess. If you would like a person to look at it, use the reference id in this response.",
+    "model_score": 0.8275,
+    "style_score": 0.52
+}
 ```
 
 **An appeal**
@@ -258,22 +339,69 @@ $ curl -X POST http://127.0.0.1:5000/submit \
 ```bash
 $ curl -X POST http://127.0.0.1:5000/appeal \
   -H "Content-Type: application/json" \
-  -d '{"content_id": "...", "reasoning": "..."}'
+  -d '{"content_id": "a2c9033b-2c93-42e7-9949-e3ca90fd1491",
+       "reasoning": "I wrote every word of this myself. English is my second language so I write in short plain sentences, and I think that is why your checks could not agree."}'
 ```
 
 ```json
+{
+    "appeal_recorded_at": "2026-11-02T06:45:45+00:00",
+    "content_id": "a2c9033b-2c93-42e7-9949-e3ca90fd1491",
+    "message": "Your appeal has been recorded and this item is now waiting for a person to review it. The original result stays in the record alongside your appeal — nothing was overwritten.",
+    "status": "under_review"
+}
+```
 
+A `content_id` that doesn't exist is a loud 404, never a silent success:
+
+```bash
+$ curl -X POST http://127.0.0.1:5000/appeal \
+  -H "Content-Type: application/json" \
+  -d '{"content_id": "does-not-exist", "reasoning": "typo test"}'
+```
+
+```json
+{"error": "unknown_content_id", "message": "We have no decision recorded under that reference id. Check it against the response you were given."}
 ```
 
 **What the log shows afterwards**
 
 ```bash
-$ curl "http://127.0.0.1:5000/log?limit=3"
+$ curl "http://127.0.0.1:5000/log?limit=2"
 ```
 
 ```json
-
+{
+    "count": 2,
+    "entries": [
+        {
+            "combined_score": 0.6276,
+            "content_id": "a2c9033b-2c93-42e7-9949-e3ca90fd1491",
+            "creator_id": "mara",
+            "guess": "unsure",
+            "label": "Our checks did not agree with each other on this one, so we have not reached any conclusion about it and nothing is on file either way. These checks are unreliable across a wide range of perfectly ordinary writing, and we would rather say so than guess. If you would like a person to look at it, use the reference id in this response.",
+            "model_score": 0.8275,
+            "status": "decided",
+            "style_score": 0.52,
+            "timestamp": "2026-11-02T06:45:44+00:00",
+            "word_count": 113
+        },
+        {
+            "content_id": "a2c9033b-2c93-42e7-9949-e3ca90fd1491",
+            "creator_id": "mara",
+            "event": "appeal",
+            "reasoning": "I wrote every word of this myself. English is my second language so I write in short plain sentences, and I think that is why your checks could not agree.",
+            "status": "under_review",
+            "timestamp": "2026-11-02T06:45:45+00:00"
+        }
+    ]
+}
 ```
+
+Two entries, one `content_id`, in order. The decision is still there exactly
+as it was written — the appeal sits *after* it rather than overwriting it,
+which is the whole point of an append-only log. Someone reading this later can
+see what was decided, that it was challenged, and in what order.
 
 ---
 
