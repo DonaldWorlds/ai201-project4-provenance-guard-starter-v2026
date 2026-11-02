@@ -407,17 +407,46 @@ see what was decided, that it was challenged, and in what order.
 
 ## How I Used AI
 
-**Moment 1**
+**Moment 1 — the combining rule**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* A rule for turning two 0–1 signals into one score,
+  leaning toward the writer the way Milestone 1 decided.
 
-**Moment 2**
+- *What came back:* Three candidate rules run over all five calibration
+  samples side by side, with a scorecard. The useful part was not the
+  recommendation — it was the table showing **all three produced an identical
+  outcome on the false positive.** `plain_human`'s two signals differed by
+  only 0.140, so as far as any combining rule could tell, two independent
+  methods were agreeing.
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I changed:* I picked the split rule, but not for the reason it was
+  offered. The comparison showed it was the only option where anything reached
+  high-confidence human — `formal_human` at 0.3319 — and under a plain average
+  nothing scored at or below 0.35, so **criterion 5 would have failed before
+  the thresholds were even tested.** I also stopped trying to fix the false
+  positive in `combine_signals`, which is where I had assumed the fix belonged.
+  It was in `stylometry.punctuation_density` the whole time.
+
+**Moment 2 — reading my own labels back**
+
+- *What I asked for:* Three label variants, and then a read of them as the
+  writer receiving them rather than as the engineer who wrote them.
+
+- *What came back:* The AI label held up. The unsure one did not. It explained
+  the system's limits by listing properties of my writing — *"plain, short, or
+  in a style these checks handle badly"* — which reads as a review of your
+  prose, not as reassurance. It also said nothing had been recorded and then
+  offered an appeal, which contradicts itself: if there is nothing on file,
+  what am I appealing against?
+
+- *What I changed:* Rewrote the unsure label so the uncertainty is a property
+  of the checks and never of the reader — *"These checks are unreliable across
+  a wide range of perfectly ordinary writing, and we would rather say so than
+  guess."* Cut *"nothing has been recorded against it"* from the human label,
+  because reassurance that mentions a record announces that a record could
+  exist. Kept the AI label's naming of exactly who it misreads, which turned
+  out to be the strongest sentence of the three — it hands a wrongly-accused
+  person a specific argument instead of a vague right of appeal.
 
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
 
