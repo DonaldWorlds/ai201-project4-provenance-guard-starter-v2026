@@ -448,6 +448,49 @@ see what was decided, that it was challenged, and in what order.
   out to be the strongest sentence of the three — it hands a wrongly-accused
   person a specific argument instead of a vague right of appeal.
 
+<!-- ── unit 8 ── -->
+
+**Moment 3 — choosing the one improvement**
+
+- *What I asked for:* which of three diagnosed problems to spend the unit's
+  single change on — the split rule the evasions exploited, the punctuation
+  measure, or the appeal bug.
+
+- *What came back:* not an answer. Seven candidate scoring changes, scored
+  against the attack-set results **before** anything was edited, as a table.
+  Every one traded a failure for another: the split-rule changes caught **zero**
+  additional evasions while adding two false accusations; the punctuation cap
+  moved EV07 from 0.2103 to 0.2175 and changed no label anywhere; capping style
+  at 0.50 removed all three false accusations and made the AI label unreachable.
+
+- *What I changed:* my choice. I had assumed the improvement would be a scoring
+  change, because the evasions were the loudest failure. The table showed every
+  scoring change moves a cost onto someone, so I spent the change on the appeal
+  bug instead — the one finding that was a defect rather than a trade. The
+  rejected-candidates table is in the README because the reasoning is the
+  evidence, not the conclusion.
+
+**Moment 4 — arguing against my own verdict**
+
+- *What I asked for:* the strongest possible case *against* the verdict I had
+  reached on criterion 1 (MET, 0 of 10), without being told which verdict was
+  right.
+
+- *What came back:* that I had not chosen my own samples — they were selected
+  by filtering for "first-person, 40+ words", a filter that may correlate with
+  scoring human, since first-person prose has more varied structure than the
+  expository writing that produced my worst false positive. Also that ten
+  paragraphs from six documents are not ten independent pieces.
+
+- *What I changed:* I went and got the evidence the objection named, which is
+  the part the brief says is mine. Scoring the **33 first-person passages that
+  were not chosen** gave 32 human, 1 unsure, 0 at or above the threshold —
+  settling the sampling-variance objection, since all 43 pass. The filter
+  objection I could *not* settle, because I cannot separate my own expository
+  writing in those files from the starter templates around it. So the verdict
+  stands at MET with its reach written down: 43 of 43 passages **in one
+  register**. Before this I would have written "0 of 10, MET" and left it there.
+
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
 
 ---
@@ -1254,17 +1297,123 @@ does is let a stranger file an appeal against an id that was never a decision.
 
 ## What's Still Broken
 
-<!-- For each attack still getting through and each criterion still missed:
-     what you'd do, and why you stopped. -->
+Eleven attacks still get through, two were never tested, and one criterion is
+still missed. Each one below says what I would do and why I stopped.
 
+### The eight evasions — EV01, EV02, EV03, EV05, EV06, EV07, EV09, and EV04
 
+**What I'd do:** replace signal two, not patch it. The measurement says it
+barely works as a signal at all — `style_signal` lands at 0.55–0.71 on known
+AI and 0.24–0.68 on known humans, so the two distributions sit almost on top
+of each other. Six of these eight evasions are one attack with different
+surface edits, and all of them work because shape is cheap to change while
+meaning is not. A signal that reads *shape* will always be the cheap one to
+beat.
+
+The nearest thing to a real fix I measured is **dropping signal two entirely**
+and scoring on perplexity alone: evasions caught goes 1/9 → 3/9. It also takes
+false accusations from 3/7 to 6/7 and makes the high-confidence human label
+unreachable, so it is not a fix, it is a different set of victims.
+
+**Why I stopped:** the unit allows one change and I spent it on a defect
+rather than a trade. Underneath that, I do not think this is fixable by
+tuning. Both of my signals measure *how predictable and how regular* a piece
+of writing is, and that is a property of the writer, not of the author's
+species. Another weighting moves which group pays.
+
+### The three false positives — FP02, FP05, FP07
+
+**What I'd do:** cap `style_signal` at 0.50. I measured it and it takes false
+accusations from **3/7 to 0/7** with no loss of evasion detection. The
+justification is not a hunch: a signal whose range on known AI (0.55–0.71)
+overlaps its range on known humans (0.24–0.68) should not be permitted to
+carry a score over an accusation threshold on its own.
+
+**Why I stopped:** it costs the AI label. With style capped, `clearly_ai`
+falls to 0.6312 and `lightly_edited_ai` to 0.6245 — both *unsure* — so the
+only text in my whole corpus that still reaches "high-confidence AI" is EV10.
+Criteria 2 and 5 flip MET → MISSED. I was not willing to spend the unit's one
+change on something that breaks two criteria I had already met, without a
+second measured run to show what it does to the rest of the attack set.
+
+**It is still the change I would make first** if I had a second one.
+
+### The two that were never tested — EV08 and FP08
+
+Both came back 400, under `MIN_WORDS = 40`, so neither ever reached a signal.
+I predicted this in Milestone 1 *before* running the set, which is why they are
+counted separately rather than marked HELD.
+
+**What I'd do:** separate "I refuse this" from "I cannot judge this". FP08 is a
+real person submitting a short piece of genuine writing and being turned away
+rather than assessed — a 400 is the wrong answer to them even if it is the
+right answer to a malformed request. A `200` carrying *"this is too short for
+us to say anything about"* would be honest; a refusal is not.
+
+**Why I stopped:** changing `MIN_WORDS` was a live candidate for the one
+improvement, and the appeal bug beat it because it was a defect rather than a
+judgement call. 31 requests in the attack run were rejected `text_too_short`,
+so this gate is doing far more work than I ever measured, and I would want to
+know what those 31 would have scored before changing the number.
+
+### Criterion 2 — still MISSED
+
+`clearly_human` scores 0.3996; the criterion demands ≤ 0.35.
+
+**What I'd do:** decide which of two numbers is wrong. In unit 7 I raised
+`HUMAN_THRESHOLD` to 0.40 so that text would get the human *label*, and left
+criterion 2 saying 0.35. The service and my own acceptance criterion now
+disagree about the same submission.
+
+**Why I stopped:** both available moves are the ones I am not allowed to make.
+Raising the criterion to 0.40 is lowering a target because I missed it — the
+revision the brief says costs the point. Lowering `HUMAN_THRESHOLD` back to
+0.35 is a second change to the pipeline in a unit that allows one, and it would
+make `clearly_human` *unsure*, which is a worse answer to that writer.
+
+### Criterion 3 — met, but it was too easy
+
+I wrote it after the route existed and after confirming all six cases passed;
+my own note says *"All six pass as of Milestone 3."* The tightened version —
+six distinct `reason` values, not just six entries — is written up in the
+Milestone 4 section. I have not applied it, because rewriting a target after
+seeing the run is the same error as lowering one, mirrored.
+
+### Three things nobody attacked, which I would fix before shipping
+
+**The rate limiter has a hole I left open on purpose.** `rate_limit_key` falls
+back to the address only when no `creator_id` is sent, so an attacker who sends
+a *different* `creator_id` on every request gets a fresh bucket each time and is
+never limited. The attack set did not try it. A real one would.
+
+**The audit log carries permanent contamination.** `no-such-id` still holds six
+entries from before the appeal fix. The fix stops new ids being planted; it
+cannot remove the ones already there, because an append-only log cannot forget.
+Anything that audits by content_id has to know this.
+
+**Entries from unit 7 have no `scoring` fingerprint.** I added it in unit 8
+Milestone 1, so the before and after runs share a shape — but a decision made
+in unit 7 still cannot be tied to the thresholds that produced it.
+
+---
 
 **The trade I'd make if this ran for real:**
 
-<!-- Two sentences. Fewer wrong accusations means more AI text getting through.
-     Say which way you'd go and WHO PAYS FOR IT. -->
+I would cap signal two so it can no longer carry a score over the accusation
+threshold on its own, accept that the system then almost never says
+"high-confidence AI", and ship something that answers *human* or *unsure* and
+very little else. **The platform pays for that** — in generated text that goes
+unflagged, and in a detection product that mostly declines to detect — and the
+people who stop paying are the ones my measurements kept finding: the
+second-language writer at `model_score` 0.8051, the technical writer at 0.7419,
+the plain writer at 0.8275, none of whom did anything wrong.
 
+The honest extension of that sentence is that a detector which can only
+responsibly say "unsure" may not be a product worth shipping, and that finding
+belongs in the decision about whether to build it rather than in a later
+release.
 
+---
 
 <!-- ═════════════════════════════════════════════════════════════════════
 
