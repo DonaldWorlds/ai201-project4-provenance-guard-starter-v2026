@@ -112,6 +112,38 @@ AI_THRESHOLD = 0.65
 # The longest appeal the service will accept, in characters.
 MAX_APPEAL_CHARS = 2000
 
+
+def fingerprint() -> dict:
+    """
+    Every setting that can change a score, so a log entry can say which
+    version of the system produced it.
+
+    Added in unit 8, Milestone 1, after reading one entry by eye and asking
+    the question the milestone asks: could someone reconstruct this decision
+    without my code? They could re-do the arithmetic, but they could not tell
+    whether `guess` was "ai" because the score was high or because the
+    threshold was low. Those are different claims and the entry couldn't
+    distinguish them.
+
+    That matters most for this unit specifically. The improvement in Milestone
+    5 may move a threshold or a weight, and without this the before-run and
+    after-run entries are structurally identical with nothing to tell them
+    apart — which is exactly the comparison being graded.
+
+    Recorded now, before either attack run exists, because after Milestone 2
+    it would be too late to add without the two runs disagreeing about shape.
+    """
+    return {
+        "model": DETECTOR_MODEL,
+        "w_model": WEIGHT_MODEL_SIGNAL,
+        "w_style": WEIGHT_STYLE_SIGNAL,
+        "gap": DISAGREEMENT_GAP,
+        "pull": SPLIT_PULL_TO_HUMAN,
+        "human_at": HUMAN_THRESHOLD,
+        "ai_at": AI_THRESHOLD,
+        "min_words": MIN_WORDS,
+    }
+
 # ⚠️ One thing that catches people out in Milestone 5. A weighted average can
 # only land between its two inputs — so while `style_signal` is still the stub
 # returning 0.5, the combined score can never leave 0.25–0.75 no matter what

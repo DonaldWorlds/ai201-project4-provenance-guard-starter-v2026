@@ -68,6 +68,10 @@ def log_decision(
         "combined_score": combined_score,
         "label": label,
         "status": status,
+        # The settings in force when this was scored. Nine fields say WHAT was
+        # decided; this says which version of the system decided it. Without
+        # it, "guess": "ai" can't be told apart from a threshold that moved.
+        "scoring": config.fingerprint(),
     }
     entry.update(extra)
     return _append(entry)
