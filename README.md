@@ -747,40 +747,134 @@ wrote myself and the attack set found it in one row.
 
 ## Run Log and Verdicts
 
-<!-- Your five criteria across three trials. `run_eval.py --label before`. -->
+Three trials each, changing nothing in between. Nothing in either signal is
+random, so identical scores across trials are evidence rather than a skipped
+step — and the one criterion whose trials *did* differ is the one that found a
+real bug.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. My own writing flagged as AI | 0 of 10 | — | — | — | **NOT RUN** |
+| 2. Clearly-AI vs clearly-human spread | ≥ 0.30 apart, human ≤ 0.35 | 0.2616 / 0.3996 | 0.2616 / 0.3996 | 0.2616 / 0.3996 | **MISSED** |
+| 3. Bad input 4xx not 5xx, all logged | 6 of 6 | 6/6 | 6/6 | 6/6 | **MET** |
+| 4. Appeals move status and log; unknown id 404 | 5 of 5, and 404 | 5/5, **404** | 5/5, **200** | 5/5, **200** | **MISSED** |
+| 5. All three labels, same label each trial | 3 of 3 | 3/3 | 3/3 | 3/3 | **MET** |
 
-**Real output from one trial**, pasted as text, naming the file and function
-that produced it:
+**Criterion 1 is not run, and is not a pass.** It says *"of 10 pieces I wrote
+myself"*, and `samples/mine/` is empty. The five files in `samples/` were
+written by Claude to calibrate the signals, so measuring a false-positive rate
+against them would measure Claude's prose, not mine. `scenarios.py` leaves the
+scenario out of the run entirely when that folder is empty, rather than
+reporting 0 of 0 as a pass — the number this criterion exists to produce does
+not exist yet.
+
+### Real output from one trial
+
+**Criterion 2 — score spread.** Produced by `run_eval.py::main`, scenario
+`scenarios.py::SCENARIOS[0]` ("score spread"), trial 1 of
+`results/run_2026-11-10_2342_before.md`:
 
 ```json
-
+[
+  {"status": 200, "guess": "ai",    "confidence": 0.6612, "model_score": 0.8748, "style_score": 0.5462},
+  {"status": 200, "guess": "human", "confidence": 0.3996, "model_score": 0.4383, "style_score": 0.3609},
+  {"status": 200, "guess": "human", "confidence": 0.3319, "model_score": 0.5019, "style_score": 0.2403}
+]
 ```
 
-**Diagnoses**
+**Criterion 3 — bad input.** Same file, scenario `"bad input"`, trial 1:
 
-<!-- For each miss AND each broken attack: the stage and the mechanism.
+```json
+[
+  {"status": 400}, {"status": 400}, {"status": 400}, {"status": 400}, {"status": 400}
+]
+```
 
-     Your service has five stages: the route, signal one, signal two, the
-     combining rule, and the label mapping.
+and the matching rejections, from `audit.py::log_rejection` via
+`GET /log`:
 
-     Not a diagnosis:  "The evasion attacks got through."
-     A diagnosis:      "Four evasion inputs got through. All four had typos
-                        added to AI-generated text. My second signal measures
-                        word variety, and typos raise word variety — so it read
-                        them as more human. My combining rule weights that
-                        signal at 0.6, so it dragged the whole score down."
+```json
+{"timestamp": "2026-11-11T04:42:45+00:00", "creator_id": "eval_bad_missing", "event": "rejected", "status": "rejected", "reason": "missing_text", "field": "text"}
+{"timestamp": "2026-11-11T04:42:45+00:00", "creator_id": "eval_bad_short",   "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T04:42:45+00:00", "creator_id": "eval_bad_huge",    "event": "rejected", "status": "rejected", "reason": "text_too_long", "field": "text"}
+```
 
-     Look for a pattern. Five failures on one signal is one problem, not five. -->
+**Criterion 4 — the appeal path.** Produced by `eval_appeal.py::one_trial`,
+from `results/eval_appeal_2026-11-10_2342_before.json`:
 
+```json
+{"trial": 1, "status_moved": "5/5", "appeal_logged": "5/5", "unknown_id_status": 404}
+{"trial": 2, "status_moved": "5/5", "appeal_logged": "5/5", "unknown_id_status": 200}
+{"trial": 3, "status_moved": "5/5", "appeal_logged": "5/5", "unknown_id_status": 200}
+```
 
+**Criterion 5 — label coverage.** `run_eval.py::main`, scenario
+`"label coverage"`, trial 1:
+
+```json
+[
+  {"status": 200, "guess": "human",  "confidence": 0.3319, "model_score": 0.5019, "style_score": 0.2403},
+  {"status": 200, "guess": "unsure", "confidence": 0.6276, "model_score": 0.8275, "style_score": 0.52},
+  {"status": 200, "guess": "ai",     "confidence": 0.6612, "model_score": 0.8748, "style_score": 0.5462}
+]
+```
+
+### Diagnoses
+
+**Criterion 2 — MISSED. Stage: the thresholds. Mechanism: I moved one number
+and left the other.**
+
+`clearly_human.txt` scores **0.3996**. The criterion requires clearly-human
+text at **≤ 0.35**, so it misses by 0.0496, and the spread comes to 0.2616
+against a target of 0.30.
+
+The cause is not drift in the pipeline — all three trials are identical to
+four decimal places. In unit 7 Milestone 5 I raised `HUMAN_THRESHOLD` from
+0.35 to **0.40** specifically so `clearly_human` would receive the
+high-confidence human *label*. Criterion 2's number was written in Milestone 2,
+before any of that, and still says 0.35. So the service now tells that writer
+"this reads as a person's writing" while my own acceptance criterion records
+the same submission as a failure.
+
+One of those two numbers is wrong and the criterion is not the one I may
+quietly move. Lowering a target because I missed it is the revision that costs
+the point.
+
+**Criterion 4 — MISSED. Stage: the route, `app.py::appeal`. Mechanism: the
+rejection I log to make failures visible is what makes the next attempt
+succeed.**
+
+Trials went **404, 200, 200**. The existence check at
+[app.py:360](app.py#L360) asks *"is there any entry with this content_id?"* —
+not *"is there a decision with this content_id?"*. On the 404 path,
+[app.py:362](app.py#L362) writes a rejection entry **carrying that same
+content_id**. The next identical request finds that rejection, concludes the
+id exists, and files an appeal against it: 200.
+
+```json
+{"timestamp":"…04:42:53+00:00","creator_id":"unknown","event":"rejected","status":"rejected","reason":"unknown_content_id","content_id":"no-such-id"}
+{"timestamp":"…04:42:54+00:00","content_id":"no-such-id","creator_id":"unknown","event":"appeal","status":"under_review","reasoning":"typo"}
+```
+
+**Anyone can appeal any content_id by sending it twice.** The first attempt
+plants the id; the second succeeds. The audit log now holds appeals filed
+against an id that was never a decision, which is precisely the kind of entry
+an audit log exists to make impossible.
+
+This came from my own Milestone 1 principle — *an attack that shows up only as
+an absence is one you'll never find* — applied without noticing that the trace
+I was leaving was also a record. **One trial would have passed this.** It is
+the only criterion whose three runs disagreed, and it is the only real bug the
+five criteria found.
+
+**Criterion 1 — NOT RUN. Stage: the test, not the service.** `samples/mine/`
+is empty. This is the criterion I called the most important in Milestone 2 and
+it is the one with no evidence behind it. Recording it as NOT RUN rather than
+leaving the row out is the honest version: the gap is mine.
+
+**Criteria 3 and 5 — MET, stable across all three trials.** 15 bad-input
+requests produced 15 log entries and no 5xx; all three labels were reached by
+the same text in every trial.
 
 ---
 

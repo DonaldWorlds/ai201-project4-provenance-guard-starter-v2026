@@ -22,49 +22,96 @@ A scenario carries **either** of these:
               because you cannot express "the field is missing" as a string.
 """
 
+from pathlib import Path
+
+_ROOT = Path(__file__).parent
+_SAMPLES = _ROOT / "samples"
+
+
+def _read(name: str) -> str:
+    return (_SAMPLES / name).read_text(encoding="utf-8").strip()
+
+
+def _my_own_writing() -> list[str]:
+    """
+    Criterion 1 needs text I wrote myself, and nobody else's prose will do.
+
+    The five files in samples/ were written by Claude to calibrate the signals.
+    Measuring a false-positive rate against them would measure Claude's writing
+    style, not mine — so they are deliberately NOT used here. Only
+    samples/mine/*.txt counts.
+
+    If that folder is empty this returns nothing and the scenario is left out
+    of the run entirely, so the run log shows criterion 1 as NOT RUN rather
+    than quietly reporting 0 of 0 as a pass.
+    """
+    mine = sorted((_SAMPLES / "mine").glob("*.txt"))
+    return [p.read_text(encoding="utf-8").strip() for p in mine
+            if p.read_text(encoding="utf-8").strip()]
+
+
 SCENARIOS = [
-    {
+    # ── Criterion 1 — false positives ───────────────────────────────────────
+    # "Of 10 pieces I wrote myself, 0 are labelled high-confidence AI."
+    # Added only when samples/mine/ actually holds something. See above.
+    *([{
         "name": "my own writing",
         "criterion": 1,
-        # ⚠️ PUT YOUR OWN WRITING HERE. Not AI text, not a sample from the web —
-        # things you actually wrote. This is the criterion that matters most and
-        # it's meaningless with someone else's prose.
+        "texts": _my_own_writing(),
+    }] if _my_own_writing() else []),
+
+    # ── Criterion 2 — score spread ──────────────────────────────────────────
+    # "Clearly-AI scores >= 0.65, clearly-human <= 0.35, a gap of >= 0.30."
+    {
+        "name": "score spread",
+        "criterion": 2,
         "texts": [
-            "REPLACE ME with a paragraph you wrote yourself.",
-            "REPLACE ME with another one. Ten pieces is the usual number.",
+            _read("clearly_ai.txt"),        # expect >= 0.65
+            _read("clearly_human.txt"),     # expect <= 0.35
+            _read("formal_human.txt"),      # expect <= 0.35
         ],
     },
+
+    # ── Criterion 3 — bad input ─────────────────────────────────────────────
+    # "Six malformed inputs, all 4xx, never 5xx, all written to the log."
+    # Five are expressible as request bodies. The sixth — a body that parses
+    # as JSON but isn't an object — cannot be, because `bodies` entries have
+    # to be dicts. That case is covered by attack RQ07 in the Milestone 2 run,
+    # which returned 400.
+    {
+        "name": "bad input",
+        "criterion": 3,
+        "bodies": [
+            {"creator_id": "eval_bad_missing"},                    # no text field
+            {"text": "", "creator_id": "eval_bad_empty"},          # empty
+            {"text": "far too short to score", "creator_id": "eval_bad_short"},
+            {"text": "word " * 11000, "creator_id": "eval_bad_huge"},
+            {"text": _read("clearly_human.txt")},                  # no creator_id
+        ],
+    },
+
+    # ── Criterion 5 — label coverage ────────────────────────────────────────
+    # "For each of the three labels I can name text that produces it, and it
+    # produces the same label in all three trials."
     {
         "name": "label coverage",
-        "criterion": 2,
-        # Inputs spread across your score range, so you can check all three
-        # labels are actually reachable.
+        "criterion": 5,
         "texts": [
-            "REPLACE ME with something you're confident is AI-generated.",
-            "REPLACE ME with something you're confident is human-written.",
-            "REPLACE ME with something genuinely borderline.",
+            _read("formal_human.txt"),   # expect high-confidence human
+            _read("plain_human.txt"),    # expect unsure
+            _read("clearly_ai.txt"),     # expect high-confidence AI
         ],
     },
-    # A bad-input criterion looks like this. Uncomment and adjust if that's one
-    # of your five — these are raw request bodies, sent exactly as written.
-    #
-    # {
-    #     "name": "bad input",
-    #     "criterion": 3,
-    #     "bodies": [
-    #         {"text": "", "creator_id": "eval_bad_empty"},
-    #         {"creator_id": "eval_bad_missing"},          # no text field at all
-    #         {"text": "word " * 50000, "creator_id": "eval_bad_huge"},
-    #         {"text": None, "creator_id": "eval_bad_null"},
-    #     ],
-    # },
 
-    # TODO: add what your remaining criteria need.
+    # ── Criterion 4 — the appeal path ───────────────────────────────────────
+    # Not here, and it can't be. An appeal needs a submission first and then a
+    # second request against the content_id that came back, which a list of
+    # request bodies cannot express.
     #
-    # A criterion about the appeal path can't be tested by sending text alone;
-    # it needs a submission first and then an appeal against the content_id
-    # that came back. You'll need to test that one by hand, or extend this file
-    # and run_eval.py to do it. Saying which you did is part of the write-up.
+    # The starter offers two ways out: test it by hand, or extend the harness.
+    # I extended it — `eval_appeal.py` does the submit-then-appeal round trip
+    # five times, three trials, and writes the same kind of report to results/.
+    # Doing it by hand would not have survived three trials honestly.
 ]
 
 
