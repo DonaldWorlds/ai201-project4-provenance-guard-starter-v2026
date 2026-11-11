@@ -1153,6 +1153,65 @@ defect that was simply wrong. I spent the single change on the defect.
 | flood_same_creator | 12 | 12 | 0 | 0 |
 | **total** | **56** | **43** | **11** | **2** |
 
+| ID | Family | What it was going for | Status | Guess | Score | Verdict |
+|---|---|---|---|---|---|---|
+| EV01 | evasion | signal two: typos raise word variety | 200 | human | 0.297 | **BROKE** |
+| EV02 | evasion | signal two: broken-up sentences raise length spread | 200 | human | 0.3572 | **BROKE** |
+| EV03 | evasion | signal two: a pasted quotation changes the shape | 200 | human | 0.3919 | **BROKE** |
+| EV04 | evasion | signal one: unusual words raise perplexity | 200 | unsure | 0.5598 | **BROKE** |
+| EV05 | evasion | both signals: heavy human editing pass | 200 | human | 0.2527 | **BROKE** |
+| EV06 | evasion | signal two: one very long sentence and one very short | 200 | human | 0.3885 | **BROKE** |
+| EV07 | evasion | signal two: padding with punctuation | 200 | human | 0.2103 | **BROKE** |
+| EV08 | evasion | signal one: text below the token window | 400 | — | — | **NOT TESTED** |
+| EV09 | evasion | both: AI text with a human opening paragraph bolted on | 200 | unsure | 0.4153 | **BROKE** |
+| EV10 | evasion | signal two: repeated stanza structure | 200 | ai | 0.8073 | **HELD** |
+| FP01 | false_positive | plain, clear human writing with no flourishes | 200 | unsure | 0.5766 | **HELD** |
+| FP02 | false_positive | human writing in a formal register | 200 | ai | 0.6955 | **BROKE** |
+| FP03 | false_positive | a non-native English speaker writing carefully | 200 | unsure | 0.567 | **HELD** |
+| FP04 | false_positive | a student essay written to a rubric | 200 | unsure | 0.643 | **HELD** |
+| FP05 | false_positive | technical documentation written by a person | 200 | ai | 0.7419 | **BROKE** |
+| FP06 | false_positive | a person imitating a formal template | 200 | unsure | 0.6324 | **HELD** |
+| FP07 | false_positive | human writing that repeats a phrase deliberately | 200 | ai | 0.6629 | **BROKE** |
+| FP08 | false_positive | very short genuine human submission | 400 | — | — | **NOT TESTED** |
+| PI01 | prompt_injection | instruction to ignore the check | 200 | human | 0.25 | **HELD** |
+| PI02 | prompt_injection | instruction disguised as a system message | 200 | human | 0.2627 | **HELD** |
+| PI03 | prompt_injection | instruction wrapped in the writer's voice | 200 | unsure | 0.5096 | **HELD** |
+| PI04 | prompt_injection | attempt to make the label text hostile | 200 | human | 0.3136 | **HELD** |
+| PI05 | prompt_injection | attempt to inject into the audit log | 400 | — | — | **HELD** |
+| PI06 | prompt_injection | instruction plus real human text | 200 | unsure | 0.5523 | **HELD** |
+| MF01 | malformed | text is only whitespace | 400 | — | — | **HELD** |
+| MF02 | malformed | text is a single character | 400 | — | — | **HELD** |
+| MF03 | malformed | text is control characters | 400 | — | — | **HELD** |
+| MF04 | malformed | text is only punctuation | 400 | — | — | **HELD** |
+| MF05 | malformed | text is a very long single word | 400 | — | — | **HELD** |
+| MF06 | malformed | text is emoji only | 400 | — | — | **HELD** |
+| MF07 | malformed | text is right-to-left script | 400 | — | — | **HELD** |
+| MF08 | malformed | text is 60,000 characters | 400 | — | — | **HELD** |
+| RQ01 | malformed | no text field at all | 400 | — | — | **HELD** |
+| RQ02 | malformed | no creator_id | 400 | — | — | **HELD** |
+| RQ03 | malformed | text is a number | 400 | — | — | **HELD** |
+| RQ04 | malformed | text is a list | 400 | — | — | **HELD** |
+| RQ05 | malformed | text is null | 400 | — | — | **HELD** |
+| RQ06 | malformed | creator_id is an object | 400 | — | — | **HELD** |
+| RQ07 | malformed | body is a JSON array, not an object | 400 | — | — | **HELD** |
+| RQ08 | malformed | body is unparseable JSON | 400 | — | — | **HELD** |
+| RQ09 | malformed | body is empty | 400 | — | — | **HELD** |
+| RQ10 | malformed | body is form-encoded, not JSON | 400 | — | — | **HELD** |
+| RQ11 | malformed | body is JSON claiming to be plain text | 400 | — | — | **HELD** |
+| RQ12 | malformed | deeply nested JSON | 400 | — | — | **HELD** |
+| FL01_01 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_02 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_03 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_04 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_05 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_06 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_07 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_08 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_09 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_10 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_11 | flood_same_creator | 20 rapid submissions from one creator | 429 | — | — | **HELD** |
+| FL01_12 | flood_same_creator | 20 rapid submissions from one creator | 429 | — | — | **HELD** |
+
 **Identical to the before run. All 56 rows, byte for byte** — same statuses,
 same scores, same verdicts. I diffed them rather than eyeballing it:
 
