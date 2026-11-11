@@ -1084,22 +1084,112 @@ expository writing would pass, and FP05 is a direct reason to doubt it would.
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** one line of logic in `app.py::appeal`. The check for
+whether a `content_id` exists now asks *"is there a **decision** with this
+id?"* instead of *"is there **any entry** with this id?"*.
 
-**Which diagnosis pointed at it:**
+```python
+entries = audit.entries_for(content_id)
+decisions = [e for e in entries if e.get("status") == "decided"]
+if not decisions:
+    audit.log_rejection(creator_id="unknown", reason="unknown_content_id",
+                        content_id=content_id)
+    return jsonify({"error": "unknown_content_id", ...}), 404
+```
+
+Nothing else moved. No weight, no threshold, no signal, no label.
+
+**Which diagnosis pointed at it:** criterion 4, stage *the route*. The 404 path
+writes a rejection entry that **carries the content_id with it**, so the old
+check found that rejection on the next identical request and concluded the id
+was real. Anyone could appeal any id by sending it twice — the first attempt
+planted it, the second succeeded. Three trials caught it (404, 200, 200) where
+one would have passed, and because the log is append-only a planted id stayed
+appealable for good: a later re-run gave 200, 200, 200 with no 404 at all.
+
+The rejection still gets logged. Milestone 1 was right that a refusal has to
+leave a trace. What changed is that a refusal no longer counts as evidence the
+id is real.
+
+### Why not a scoring change — five alternatives, measured first
+
+I did not pick this because it was easy. I scored five candidate scoring
+changes against the attack-set results **before** touching anything, and every
+one of them traded one failure for another:
+
+| Candidate | Evasions caught | Evasions labelled *confident human* | False accusations | What it breaks |
+|---|---|---|---|---|
+| **no change** | 1/9 | 6/9 | 3/7 | — |
+| Split pull 0.65 → 0.50 | 1/9 | 3/9 | **5/7** | no detection gain at all, two new accusations |
+| Split pull 0.65 → 0.55 | 1/9 | 4/9 | **5/7** | same, smaller |
+| Split leans to *model* | 1/9 | 3/9 | **6/7** | FP03, the non-native speaker, becomes an accusation |
+| Weight model 0.7 / style 0.3 | 1/9 | 6/9 | 3/7 | nothing changes — the split rule uses min/max, which ignores weights |
+| Cap `punctuation_density` | 1/9 | 6/9 | 3/7 | nothing changes — EV07 moves 0.2103 → 0.2175, still *human* |
+| Cap style at 0.50 | 1/9 | 6/9 | **0/7** | `clearly_ai` → 0.6312 and `lightly_edited_ai` → 0.6245, both *unsure*. The AI label becomes unreachable: criteria 2 **and** 5 flip MET → MISSED |
+| Drop signal two entirely | **3/9** | 2/9 | **6/7** | `plain_human` accused again at 0.8275; `clearly_human` and `formal_human` fall to *unsure*, so the human label becomes unreachable |
+
+Two of those are worth naming properly. **Capping style at 0.50 eliminates
+every false accusation in the attack set** — 3/7 to 0/7 — and the
+justification is real, because the measured range of `style_signal` is
+0.55–0.71 on known AI and 0.24–0.68 on known humans, which is barely a signal
+at all. It costs the AI label: the only text that still reaches it is EV10.
+**Dropping signal two triples detection**, 1/9 to 3/9, and doubles the people
+wrongly accused.
+
+So the choice was between trades that move a cost onto someone, and one
+defect that was simply wrong. I spent the single change on the defect.
 
 ### Attack Run — After
 
-<!-- Same format. `run_attacks.py --label after` -->
+`python run_attacks.py --set attack_set --label after` →
+`results/attack_run_2026-11-11_0039_after.md`
 
+| Family | Attacks | Held | Broke | Never tested |
+|---|---|---|---|---|
+| evasion | 10 | 1 | 8 | 1 |
+| false_positive | 8 | 4 | 3 | 1 |
+| prompt_injection | 6 | 6 | 0 | 0 |
+| malformed | 20 | 20 | 0 | 0 |
+| flood_same_creator | 12 | 12 | 0 | 0 |
+| **total** | **56** | **43** | **11** | **2** |
 
+**Identical to the before run. All 56 rows, byte for byte** — same statuses,
+same scores, same verdicts. I diffed them rather than eyeballing it:
 
-**Did it help, and how do I know:**
+```
+attacks in before: 56   after: 56
+rows that changed: 0
+```
 
-<!-- Widening the unsure band usually fixes one problem and creates another.
-     Reporting that trade honestly is worth full credit. -->
+That is the correct result and it is not a null finding. **The attack set
+never sends a request to `/appeal`.** It submits text and floods `/submit`; it
+has no way to exercise the endpoint I fixed. A change to `/appeal` showing up
+in these numbers would have meant I had changed something else by accident.
 
+### The criteria, before and after
 
+| Criterion | Target | Before | After |
+|---|---|---|---|
+| 1. My own writing flagged as AI | 0 of 10 | 0/10 ×3 — **MET** | 0/10 ×3 — **MET** |
+| 2. Score spread | ≥ 0.30, human ≤ 0.35 | 0.2616 / 0.3996 ×3 — **MISSED** | 0.2616 / 0.3996 ×3 — **MISSED** |
+| 3. Bad input 4xx, logged | 6 of 6 | 6/6 ×3 — **MET** | 6/6 ×3 — **MET** |
+| 4. Appeals + unknown id 404 | 5 of 5, and 404 | 5/5; **404, 200, 200** — **MISSED** | 5/5; **404, 404, 404** — **MET** |
+| 5. Label coverage | 3 of 3 | 3/3 ×3 — **MET** | 3/3 ×3 — **MET** |
+
+**Did it help, and how do I know:** yes, narrowly and provably. Criterion 4
+went from 404, 200, 200 to **404, 404, 404** across three trials, which is the
+only number in the whole project that moved. The fix also repaired damage that
+had already happened: `no-such-id` still has six entries in the audit log from
+the earlier runs, and because none of them is a *decision*, an appeal against
+it now returns 404 again. The contamination is still in the log — an
+append-only log cannot forget — but it is no longer load-bearing.
+
+**What it did not do:** it did not catch a single additional evasion, did not
+prevent a single false accusation, and did not move one row of the attack set.
+Eight evasions still get through, three real writers are still accused, and
+FP05 still reads a person's technical documentation at 0.7419. The system is
+exactly as wrong about authorship as it was this morning. What it no longer
+does is let a stranger file an appeal against an id that was never a decision.
 
 ---
 

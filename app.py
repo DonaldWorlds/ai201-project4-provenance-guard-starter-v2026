@@ -357,8 +357,26 @@ def appeal():
     # A mistyped id has to be loud. Failing quietly here looks exactly like a
     # broken endpoint, and the writer would never learn which it was — their
     # appeal would simply have never existed.
+    #
+    # ⚠️ UNIT 8 MILESTONE 5 — this is the one change of the unit.
+    #
+    # This used to ask "is there ANY entry with this content_id?". It is now
+    # "is there a DECISION with this content_id?", and the difference was a
+    # live hole. The rejection written four lines below carries the content_id
+    # with it, so the old check found that rejection on the next identical
+    # request and concluded the id existed. Anyone could appeal any id by
+    # sending it twice: the first attempt planted it, the second succeeded.
+    #
+    # Three trials caught it where one would not have — runs went 404, 200,
+    # 200. And because the log is append-only, a planted id stayed appealable
+    # for good; a later re-run gave 200, 200, 200 with no 404 at all.
+    #
+    # The rejection still gets logged. A refusal that leaves no trace is the
+    # thing Milestone 1 was right about. What changed is that a refusal no
+    # longer counts as evidence the id is real.
     entries = audit.entries_for(content_id)
-    if not entries:
+    decisions = [e for e in entries if e.get("status") == "decided"]
+    if not decisions:
         audit.log_rejection(
             creator_id="unknown", reason="unknown_content_id",
             content_id=content_id,
@@ -371,7 +389,7 @@ def appeal():
 
     # The appeal is filed under whoever the original decision belongs to, not
     # whoever sent the appeal — so the log reads as one story per content_id.
-    creator_id = entries[0].get("creator_id", "unknown")
+    creator_id = decisions[0].get("creator_id", "unknown")
     entry = audit.log_appeal(
         content_id=content_id, creator_id=creator_id, reasoning=reasoning,
     )
