@@ -130,8 +130,26 @@ MAX_APPEAL_CHARS = 2000
 # an hour, and a script sending a thousand variations to map your thresholds.
 # Your README has to say why your numbers and not others.
 
-RATE_LIMITING_ENABLED = os.getenv("AI201_RATE_LIMITS", "0") == "1"
+# ON as of unit 8, Milestone 1. The env var still overrides, so
+# AI201_RATE_LIMITS=0 turns it off for a run where limiting would get in the
+# way of what's being measured.
+RATE_LIMITING_ENABLED = os.getenv("AI201_RATE_LIMITS", "1") == "1"
 
+# 10 a minute, 200 a day. Chosen against two callers:
+#
+#   A real writer, submitting their own work a few times an hour. They never
+#   come near 10 in a minute — even someone iterating hard on one draft is
+#   submitting every few minutes, not every few seconds. 200 a day is roughly
+#   five times a heavy real day, so the cap is invisible to them.
+#
+#   A script mapping my thresholds by sending variations. 10/minute turns a
+#   thousand probes into an hour and a half of waiting, and 200/day caps what
+#   it can learn in a day no matter how patient it is. That doesn't stop a
+#   determined attacker; it makes them slow and visible, which is the most a
+#   rate limit can do.
+#
+# The per-minute number is also under 15 on purpose, so `run_attacks.py
+# --flood 15` produces a visible run of 429s rather than passing silently.
 RATE_LIMIT_PER_MINUTE = 10
 RATE_LIMIT_PER_DAY = 200
 

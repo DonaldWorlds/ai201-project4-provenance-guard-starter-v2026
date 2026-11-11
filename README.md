@@ -454,25 +454,80 @@ see what was decided, that it was challenged, and in what order.
 
 ## Rate Limiting
 
-**My limits:** ___ per minute, ___ per day
+**My limits:** **10** per minute, **200** per day
 
 **Why those numbers and not others:**
-<!-- Think about two people: a real writer submitting their own work a few
-     times an hour, and a script sending a thousand variations to map your
-     thresholds. Your numbers have to be liveable for the first and hostile to
-     the second. -->
 
-**What a caller counts as:** <!-- per address, or per creator_id? They fail
-differently — one script can look like a thousand callers, and one household
-can look like one. -->
+Chosen against two callers.
+
+*A real writer*, submitting their own work a few times an hour, never comes
+near 10 in a minute. Even someone iterating hard on one draft submits every
+few minutes, not every few seconds. 200 a day is roughly five times a heavy
+real day, so the cap is invisible to them — which is the test a rate limit has
+to pass first.
+
+*A script mapping my thresholds* by sending variations is what the cap is
+actually for. 10/minute turns a thousand probes into an hour and a half of
+waiting, and 200/day caps what it can learn in a day however patient it is.
+This does not stop a determined attacker. It makes them slow and it makes them
+visible in the log, which is the most a rate limit can do.
+
+The per-minute number is also deliberately under 15, so `run_attacks.py
+--flood 15` produces a visible run of 429s instead of passing silently. A
+limit I can't demonstrate is a limit I can't check.
+
+**What a caller counts as:** `creator_id` when one is sent, falling back to
+the caller's address when it isn't — `app.py::rate_limit_key`.
+
+**And this has a hole I am leaving open on purpose.** An attacker who sends a
+different `creator_id` on every request gets a fresh bucket every time and is
+never limited at all. Per-address-only would close it, but then a lab or a
+household behind one NAT looks like a single caller and real writers block
+each other. I would rather name the hole before the attack set finds it than
+quietly patch it and report a clean run — and if the attack set does exploit
+it, that is a diagnosis I have already written half of.
 
 **The run of status codes when I pushed past it:**
 
-<!-- python run_attacks.py --flood 15 -->
+```
+$ python run_attacks.py --flood 15
 
+15 submissions as 'flood_tester' against http://127.0.0.1:5000
+
+  [ 1/15] 400     [ 6/15] 400     [11/15] 429
+  [ 2/15] 400     [ 7/15] 400     [12/15] 429
+  [ 3/15] 400     [ 8/15] 400     [13/15] 429
+  [ 4/15] 400     [ 9/15] 400     [14/15] 429
+  [ 5/15] 400     [10/15] 400     [15/15] 429
+
+============================================================
+400 400 400 400 400 400 400 400 400 400 429 429 429 429 429
+============================================================
+
+5 of 15 were rate limited.
 ```
 
-```
+The limiter works: ten through, then 429 on the nose. All fifteen are in
+`logs/audit.jsonl` — ten `text_too_short`, five `rate_limited` — so nothing
+about this run is invisible.
+
+### A prediction, written before the attack set runs
+
+Those first ten are **400, not 200**, and that is worth recording now rather
+than discovering it in Milestone 2. The flood tool's text is shorter than my
+`MIN_WORDS = 40` gate, so it never reached a signal at all.
+
+Which means: **any attack input under 40 words will be refused before it is
+ever scored.** In the attack run that will look like my system held. It isn't
+the same thing. A 400 means the input never got as far as the detector, so I
+will learn nothing about what my signals would have done with it — and an
+evasion attack that happens to be short would be recorded as a pass it never
+earned.
+
+I am not changing `MIN_WORDS` now. This unit allows the limiter, the log and
+one improvement, and I do not yet know whether this matters. If short inputs
+turn up in the attack set, this paragraph is the diagnosis and the fix is a
+candidate for the improvement.
 
 ---
 

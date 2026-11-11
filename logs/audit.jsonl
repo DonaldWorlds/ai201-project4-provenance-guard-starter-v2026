@@ -31,3 +31,19 @@
 {"timestamp": "2026-11-02T06:52:00+00:00", "creator_id": "unknown", "event": "rejected", "status": "rejected", "reason": "unknown_content_id", "content_id": "nope"}
 {"timestamp": "2026-11-02T06:52:00+00:00", "creator_id": "unknown", "event": "rejected", "status": "rejected", "reason": "missing_reasoning", "field": "reasoning"}
 {"timestamp": "2026-11-02T06:55:28+00:00", "content_id": "96b5c9c1-bf03-4aad-8ec8-fc177e439367", "creator_id": "checklist", "guess": "ai", "model_score": 0.8748, "style_score": 0.5462, "combined_score": 0.6612, "label": "Our checks suggest this was probably written by an AI tool. We can be wrong about this — these checks are known to misread writing that is plain, short, or written in a second language — so if you wrote it yourself, use the reference id in this response and a person will read it properly.", "status": "decided", "word_count": 125}
+{"timestamp": "2026-11-11T03:30:28+00:00", "content_id": "2e848f4b-a04c-4930-9a0f-7d28e539a8d9", "creator_id": "unit8-setup", "guess": "human", "model_score": 0.4383, "style_score": 0.3609, "combined_score": 0.3996, "label": "This reads as a person's writing. Our checks found no sign that a machine wrote it, and nothing further happens with this piece.", "status": "decided", "word_count": 119}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "text_too_short", "field": "text"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "rate_limited", "limit": "10 per 1 minute"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "rate_limited", "limit": "10 per 1 minute"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "rate_limited", "limit": "10 per 1 minute"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "rate_limited", "limit": "10 per 1 minute"}
+{"timestamp": "2026-11-11T03:37:49+00:00", "creator_id": "flood_tester", "event": "rejected", "status": "rejected", "reason": "rate_limited", "limit": "10 per 1 minute"}
