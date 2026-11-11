@@ -536,20 +536,212 @@ candidate for the improvement.
 <!-- Every attack with its outcome and a held-or-broke mark.
      `run_attacks.py --label before` produces the table. -->
 
+**56 attacks. 43 held, 11 broke, 2 were never tested.**
 
+Every break is in two families. Nothing returned a 5xx and nothing crashed.
 
-**Ten audit log entries from the run**
+| ID | Family | What it was going for | Status | Guess | Score | Verdict |
+|---|---|---|---|---|---|---|
+| EV01 | evasion | signal two: typos raise word variety | 200 | human | 0.297 | **BROKE** |
+| EV02 | evasion | signal two: broken-up sentences raise length spread | 200 | human | 0.3572 | **BROKE** |
+| EV03 | evasion | signal two: a pasted quotation changes the shape | 200 | human | 0.3919 | **BROKE** |
+| EV04 | evasion | signal one: unusual words raise perplexity | 200 | unsure | 0.5598 | **BROKE** |
+| EV05 | evasion | both signals: heavy human editing pass | 200 | human | 0.2527 | **BROKE** |
+| EV06 | evasion | signal two: one very long sentence and one very short | 200 | human | 0.3885 | **BROKE** |
+| EV07 | evasion | signal two: padding with punctuation | 200 | human | 0.2103 | **BROKE** |
+| EV08 | evasion | signal one: text below the token window | 400 | — | — | **NOT TESTED** |
+| EV09 | evasion | both: AI text with a human opening paragraph bolted on | 200 | unsure | 0.4153 | **BROKE** |
+| EV10 | evasion | signal two: repeated stanza structure | 200 | ai | 0.8073 | **HELD** |
+| FP01 | false_positive | plain, clear human writing with no flourishes | 200 | unsure | 0.5766 | **HELD** |
+| FP02 | false_positive | human writing in a formal register | 200 | ai | 0.6955 | **BROKE** |
+| FP03 | false_positive | a non-native English speaker writing carefully | 200 | unsure | 0.567 | **HELD** |
+| FP04 | false_positive | a student essay written to a rubric | 200 | unsure | 0.643 | **HELD** |
+| FP05 | false_positive | technical documentation written by a person | 200 | ai | 0.7419 | **BROKE** |
+| FP06 | false_positive | a person imitating a formal template | 200 | unsure | 0.6324 | **HELD** |
+| FP07 | false_positive | human writing that repeats a phrase deliberately | 200 | ai | 0.6629 | **BROKE** |
+| FP08 | false_positive | very short genuine human submission | 400 | — | — | **NOT TESTED** |
+| PI01 | prompt_injection | instruction to ignore the check | 200 | human | 0.25 | **HELD** |
+| PI02 | prompt_injection | instruction disguised as a system message | 200 | human | 0.2627 | **HELD** |
+| PI03 | prompt_injection | instruction wrapped in the writer's voice | 200 | unsure | 0.5096 | **HELD** |
+| PI04 | prompt_injection | attempt to make the label text hostile | 200 | human | 0.3136 | **HELD** |
+| PI05 | prompt_injection | attempt to inject into the audit log | 400 | — | — | **HELD** |
+| PI06 | prompt_injection | instruction plus real human text | 200 | unsure | 0.5523 | **HELD** |
+| MF01 | malformed | text is only whitespace | 400 | — | — | **HELD** |
+| MF02 | malformed | text is a single character | 400 | — | — | **HELD** |
+| MF03 | malformed | text is control characters | 400 | — | — | **HELD** |
+| MF04 | malformed | text is only punctuation | 400 | — | — | **HELD** |
+| MF05 | malformed | text is a very long single word | 400 | — | — | **HELD** |
+| MF06 | malformed | text is emoji only | 400 | — | — | **HELD** |
+| MF07 | malformed | text is right-to-left script | 400 | — | — | **HELD** |
+| MF08 | malformed | text is 60,000 characters | 400 | — | — | **HELD** |
+| RQ01 | malformed | no text field at all | 400 | — | — | **HELD** |
+| RQ02 | malformed | no creator_id | 400 | — | — | **HELD** |
+| RQ03 | malformed | text is a number | 400 | — | — | **HELD** |
+| RQ04 | malformed | text is a list | 400 | — | — | **HELD** |
+| RQ05 | malformed | text is null | 400 | — | — | **HELD** |
+| RQ06 | malformed | creator_id is an object | 400 | — | — | **HELD** |
+| RQ07 | malformed | body is a JSON array, not an object | 400 | — | — | **HELD** |
+| RQ08 | malformed | body is unparseable JSON | 400 | — | — | **HELD** |
+| RQ09 | malformed | body is empty | 400 | — | — | **HELD** |
+| RQ10 | malformed | body is form-encoded, not JSON | 400 | — | — | **HELD** |
+| RQ11 | malformed | body is JSON claiming to be plain text | 400 | — | — | **HELD** |
+| RQ12 | malformed | deeply nested JSON | 400 | — | — | **HELD** |
+| FL01_01 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_02 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_03 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_04 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_05 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_06 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_07 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_08 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_09 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_10 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | **HELD** |
+| FL01_11 | flood_same_creator | 20 rapid submissions from one creator | 429 | — | — | **HELD** |
+| FL01_12 | flood_same_creator | 20 rapid submissions from one creator | 429 | — | — | **HELD** |
 
-<!-- Choose entries that show the interesting failures, not the ten easiest. -->
+| Family | Attacks | Held | Broke | Never tested |
+|---|---|---|---|---|
+| evasion | 10 | 1 | 8 | 1 |
+| false_positive | 8 | 4 | 3 | 1 |
+| flood_same_creator | 12 | 12 | 0 | 0 |
+| malformed | 20 | 20 | 0 | 0 |
+| prompt_injection | 6 | 6 | 0 | 0 |
+| **total** | **56** | **43** | **11** | **2** |
+
+### What actually happened
+
+**Evasion: 8 of 10 got through, and got through *confidently*.** Not borderline
+— EV07 came back at 0.2103 and EV05 at 0.2527, well inside high-confidence
+human. My system told an attacker's AI text that a person had written it.
+
+**The mechanism is my own combining rule.** Look at the two signals on the
+breaks:
+
+| ID | model | style | gap | combined | what the attack did |
+|---|---|---|---|---|---|
+| EV07 | 0.5862 | **0.0079** | 0.578 | 0.2103 | padded with punctuation |
+| EV03 | 0.6662 | **0.2442** | 0.422 | 0.3919 | pasted in a quotation |
+| EV09 | 0.7042 | **0.2597** | 0.444 | 0.4153 | human paragraph bolted on front |
+| EV02 | 0.5943 | **0.2295** | 0.365 | 0.3572 | broke sentences up |
+| EV06 | 0.5727 | **0.2893** | 0.283 | 0.3885 | one very long, one very short |
+| EV01 | **0.1635** | 0.5450 | 0.382 | 0.2970 | typos — flipped signal *one* |
+
+In six of the eight breaks the two signals disagreed by more than
+`DISAGREEMENT_GAP`, so `combine_signals` stopped averaging and leaned 65%
+toward whichever signal read the text as more human. That is not a bug. **It
+is precisely the rule I chose in Milestone 4, doing precisely what I wrote
+down that it would do.**
+
+Which hands an attacker a recipe: *you do not need to beat both signals. Game
+one, create a disagreement, and the scoring rule resolves it in your favour.*
+EV03 is the clean demonstration — signal one said 0.6662, leaning AI, and a
+pasted quotation dragged signal two to 0.2442. My rule picked the gamed one.
+
+EV01 is the same lesson from the other side: typos raised perplexity so far
+that **signal one** read it as human (0.1635). Both of my signals are
+individually gameable, and the rule on top amplifies whichever one was got at.
+
+**The one that held, EV10, held because it failed to split them** — model
+0.9792 and style 0.7148, both high, nothing to lean toward.
+
+**False positives: 3 of 8, and they work the opposite way.** FP02 (0.6955),
+FP05 (0.7419) and FP07 (0.6629) all had *both* signals high and agreeing, so
+the split rule never fired and a plain average carried them over the line.
+Same correlated-error failure as `plain_human` in Milestone 4: agreement is
+not confirmation when both signals measure the same underlying thing.
+
+FP04 — a student essay written to a rubric — scored **0.643**, which missed a
+false accusation by **0.007**.
+
+**And the trade is visible in a single row.** FP03, a non-native English
+speaker writing carefully, had `model_score` **0.8051** — my detector was
+confident a machine wrote it. Style said 0.4388, the gap was 0.366, the split
+rule fired, and it came out at 0.567: *unsure*, not an accusation. **The exact
+rule that let eight evasions through is the only thing that stopped FP03
+becoming a fourth false accusation.** I cannot remove one without the other.
+
+**Prompt injection: 6 of 6 held, and I take no credit for it.** Nothing in my
+pipeline ever asks a model to follow instructions — `detector.py` computes
+perplexity over tokens and `stylometry.py` counts characters. There is no
+instruction-following surface to inject into. That is not vigilance, it is
+architecture, and a system that called a hosted model for a judgement would
+have failed where mine passed.
+
+**Malformed: 20 of 20 held**, every one a 400, no 5xx, all logged.
+
+**Flood: the limiter engaged.** Ten through, then `FL01_11` and `FL01_12` came
+back 429 and landed in the audit log as rejections.
+
+### The prediction from Milestone 1 landed
+
+I wrote this before the run, as a reason *not* to touch `MIN_WORDS` yet:
+
+> Any attack input under 40 words will be refused before it is ever scored. In
+> the attack run that will look like my system held. It isn't the same thing.
+
+Two rows prove it. **EV08** ("text below the token window") and **FP08** ("very
+short genuine human submission") both came back 400. Neither is a pass. EV08
+is an evasion I never tested, and FP08 is worse than a test failure — it is a
+real person submitting a short piece of genuine writing and being refused
+service rather than judged. Marking those HELD would have been dishonest, so
+they are counted separately as **never tested**.
+
+31 of the run's requests were rejected `text_too_short`. My gate is doing a
+lot of work I never measured.
+
+### Ten audit log entries from the run
 
 ```json
-
+// EV07 — evasion, punctuation padding — style signal driven to 0.0079, near-perfect 'human'
+{"combined_score": 0.2103, "content_id": "30256cd4-ff86-4fed-a0fd-b13f029f5b97", "creator_id": "attacker_EV07", "guess": "human", "label": "This reads as a person's writing. Our checks found n\u2026", "model_score": 0.5862, "scoring": {"ai_at": 0.65, "gap": 0.25, "human_at": 0.4, "min_words": 40, "model": "gpt2", "pull": 0.65, "w_model": 0.5, "w_style": 0.5}, "status": "decided", "style_score": 0.0079, "timestamp": "2026-11-11T04:18:11+00:00", "word_count": 97}
+// EV03 — evasion, pasted quotation — signals split 0.67/0.24, my rule resolved it toward the attacker
+{"combined_score": 0.3919, "content_id": "46f40c1c-7a6b-4b41-b7d3-faf0f4a2ba62", "creator_id": "attacker_EV03", "guess": "human", "label": "This reads as a person's writing. Our checks found n\u2026", "model_score": 0.6662, "scoring": {"ai_at": 0.65, "gap": 0.25, "human_at": 0.4, "min_words": 40, "model": "gpt2", "pull": 0.65, "w_model": 0.5, "w_style": 0.5}, "status": "decided", "style_score": 0.2442, "timestamp": "2026-11-11T04:18:11+00:00", "word_count": 105}
+// EV01 — evasion, typos — raised perplexity so far that signal ONE read it as human (0.1635)
+{"combined_score": 0.297, "content_id": "80789aa4-0292-47c2-8147-4aeaa7f4aefb", "creator_id": "attacker_EV01", "guess": "human", "label": "This reads as a person's writing. Our checks found n\u2026", "model_score": 0.1635, "scoring": {"ai_at": 0.65, "gap": 0.25, "human_at": 0.4, "min_words": 40, "model": "gpt2", "pull": 0.65, "w_model": 0.5, "w_style": 0.5}, "status": "decided", "style_score": 0.545, "timestamp": "2026-11-11T04:18:10+00:00", "word_count": 84}
+// EV09 — evasion, human paragraph bolted onto AI text — model 0.70 overruled by style 0.26
+{"combined_score": 0.4153, "content_id": "e4d4c427-ab02-47a5-884a-57328a535c41", "creator_id": "attacker_EV09", "guess": "unsure", "label": "Our checks did not agree with each other on this one\u2026", "model_score": 0.7042, "scoring": {"ai_at": 0.65, "gap": 0.25, "human_at": 0.4, "min_words": 40, "model": "gpt2", "pull": 0.65, "w_model": 0.5, "w_style": 0.5}, "status": "decided", "style_score": 0.2597, "timestamp": "2026-11-11T04:18:11+00:00", "word_count": 110}
+// EV10 — the one evasion that HELD — it failed to split the signals, so both stayed high
+{"combined_score": 0.8073, "content_id": "767613cd-07cd-4444-8802-fdec1fa66a8a", "creator_id": "attacker_EV10", "guess": "ai", "label": "Our checks suggest this was probably written by an A\u2026", "model_score": 0.9792, "scoring": {"ai_at": 0.65, "gap": 0.25, "human_at": 0.4, "min_words": 40, "model": "gpt2", "pull": 0.65, "w_model": 0.5, "w_style": 0.5}, "status": "decided", "style_score": 0.7148, "timestamp": "2026-11-11T04:18:11+00:00", "word_count": 78}
+// FP05 — WORST OUTCOME — technical documentation by a person, labelled high-confidence AI
+{"combined_score": 0.7419, "content_id": "cfca98d8-d295-430e-8165-c8adeb7fdf39", "creator_id": "attacker_FP05", "guess": "ai", "label": "Our checks suggest this was probably written by an A\u2026", "model_score": 0.8005, "scoring": {"ai_at": 0.65, "gap": 0.25, "human_at": 0.4, "min_words": 40, "model": "gpt2", "pull": 0.65, "w_model": 0.5, "w_style": 0.5}, "status": "decided", "style_score": 0.6832, "timestamp": "2026-11-11T04:18:12+00:00", "word_count": 70}
+// FP02 — human formal register scored 0.6955 AI — the opposite of what my calibration predicted
+{"combined_score": 0.6955, "content_id": "69a27d64-bb1d-41c2-9baa-e621699d7469", "creator_id": "attacker_FP02", "guess": "ai", "label": "Our checks suggest this was probably written by an A\u2026", "model_score": 0.7387, "scoring": {"ai_at": 0.65, "gap": 0.25, "human_at": 0.4, "min_words": 40, "model": "gpt2", "pull": 0.65, "w_model": 0.5, "w_style": 0.5}, "status": "decided", "style_score": 0.6522, "timestamp": "2026-11-11T04:18:12+00:00", "word_count": 76}
+// FP04 — student essay, 0.643 — missed a false accusation by 0.007
+{"combined_score": 0.643, "content_id": "9454ccec-65ea-46ed-8ce2-4fd48ae1d61e", "creator_id": "attacker_FP04", "guess": "unsure", "label": "Our checks did not agree with each other on this one\u2026", "model_score": 0.8329, "scoring": {"ai_at": 0.65, "gap": 0.25, "human_at": 0.4, "min_words": 40, "model": "gpt2", "pull": 0.65, "w_model": 0.5, "w_style": 0.5}, "status": "decided", "style_score": 0.5407, "timestamp": "2026-11-11T04:18:12+00:00", "word_count": 68}
+// FP03 — non-native speaker, model 0.8051 — saved from accusation ONLY by the split rule
+{"combined_score": 0.567, "content_id": "1a8b8de5-7b5a-4844-a426-c9bbbd81d50c", "creator_id": "attacker_FP03", "guess": "unsure", "label": "Our checks did not agree with each other on this one\u2026", "model_score": 0.8051, "scoring": {"ai_at": 0.65, "gap": 0.25, "human_at": 0.4, "min_words": 40, "model": "gpt2", "pull": 0.65, "w_model": 0.5, "w_style": 0.5}, "status": "decided", "style_score": 0.4388, "timestamp": "2026-11-11T04:18:12+00:00", "word_count": 83}
+// REJECTED (rate_limited) — 7 of these in the run
+{"creator_id": "attacker_flood", "event": "rejected", "limit": "10 per 1 minute", "reason": "rate_limited", "status": "rejected", "timestamp": "2026-11-11T04:18:13+00:00"}
+// REJECTED (text_too_short) — 31 of these in the run
+{"creator_id": "attacker_flood", "event": "rejected", "field": "text", "reason": "text_too_short", "status": "rejected", "timestamp": "2026-11-11T04:18:13+00:00"}
 ```
+
+Every decision carries its `scoring` fingerprint, so these entries stay
+readable against the after-run even if the improvement moves a threshold.
 
 **The single worst outcome** — the one I'd least want to explain to a writer
 whose work got caught by it:
 
+**FP05 — technical documentation written by a person. Scored 0.7419.
+High-confidence AI.**
 
+Both signals convicted it: `model_score` 0.8005, `style_score` 0.6832, a gap
+of 0.117. They agreed, so my combining rule had nothing to resolve and passed
+the average straight through. The writer got the accusation label and an
+invitation to appeal.
+
+It is the worst of the three because of *who* it is. Technical documentation
+is written plainly and consistently on purpose — that is the job. A person
+doing that job well produces exactly the shape both my signals read as
+machine-made, and the better they do it, the more certain my system becomes.
+There is no way for them to write more carefully and clear themselves; writing
+more carefully is what got them flagged.
+
+FP02 is the one that embarrasses my own homework, though. My README says, from
+the Milestone 4 calibration, that formal prose "reads as *human* to signal
+one" — my `formal_human` sample scored 0.3319. The attack set's formal human
+writing scored **0.6955**, the opposite. I tuned a claim on one paragraph I
+wrote myself and the attack set found it in one row.
 
 ---
 

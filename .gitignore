@@ -20,3 +20,10 @@ Thumbs.db
 # NOTE: logs/ and results/ are deliberately NOT ignored. Your audit log and
 # your attack runs are evidence, and they're part of what gets graded.
 # Commit them.
+
+# The attack set — staff-written assessment material. This repo is public, so
+# committing it would hand the set to anyone who finds the repo, including
+# students who haven't run it. The folder stays on disk; what gets committed
+# is results/, which is the part that's graded. Remove these two lines if the
+# TF wants the set tracked.
+attack_set/
