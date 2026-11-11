@@ -867,6 +867,32 @@ I was leaving was also a record. **One trial would have passed this.** It is
 the only criterion whose three runs disagreed, and it is the only real bug the
 five criteria found.
 
+**And it does not heal.** Re-running `eval_appeal.py` later gave **200, 200,
+200** — no 404 at all, because `no-such-id` was planted by the earlier run and
+the audit log is append-only, so the entry that makes it appealable can never
+leave. Six entries now sit under that fabricated id:
+
+```json
+{"timestamp":"…04:42:53+00:00","creator_id":"unknown","event":"rejected","status":"rejected","reason":"unknown_content_id","content_id":"no-such-id"}
+{"timestamp":"…04:53:56+00:00","content_id":"no-such-id","creator_id":"unknown","event":"appeal","status":"under_review","reasoning":"typo"}
+```
+
+The first run caught the transition (404 → 200); every run after it starts
+already broken. The append-only property I relied on to protect a writer's
+original decision is the same property that makes this permanent.
+
+### A run that measured nothing, kept on purpose
+
+`results/VOID_run_2026-11-10_2351_airplay_403s.md` is a run where every one of
+33 requests came back **403** with `Server: AirTunes/950.7.1`. `app.py` was not
+running, and macOS **AirPlay Receiver** holds port 5000, so Apple's service
+answered instead of mine.
+
+It is kept because the failure mode is worth recording: a service that is down
+does not produce a connection error here, it produces a plausible status code,
+and the harness completes and writes a report that looks like data. Checking
+`GET /health` returns JSON before trusting a run is the cheap defence.
+
 **Criterion 1 — NOT RUN. Stage: the test, not the service.** `samples/mine/`
 is empty. This is the criterion I called the most important in Milestone 2 and
 it is the one with no evidence behind it. Recording it as NOT RUN rather than

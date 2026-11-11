@@ -1,0 +1,151 @@
+{
+  "produced_by": "eval_appeal.py::one_trial",
+  "criterion": 4,
+  "target": "5 of 5 move to under_review AND are logged; unknown id -> 404",
+  "trials": [
+    {
+      "trial": 1,
+      "status_moved": "5/5",
+      "appeal_logged": "5/5",
+      "unknown_id_status": 200,
+      "detail": [
+        {
+          "i": 1,
+          "content_id": "ca38ee1b-b8c7-4e9a-9b51-d6c5ffcb7760",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 2,
+          "content_id": "2c0b8b44-bf3e-4258-aa0c-989a99b15185",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 3,
+          "content_id": "ab15e2d6-3d92-473f-80a3-56ba60ea7447",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 4,
+          "content_id": "c29c81d6-37b9-442b-9957-f551990e03f5",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 5,
+          "content_id": "8c9b9eba-8ffb-4c35-a724-d114c923ab34",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        }
+      ]
+    },
+    {
+      "trial": 2,
+      "status_moved": "5/5",
+      "appeal_logged": "5/5",
+      "unknown_id_status": 200,
+      "detail": [
+        {
+          "i": 1,
+          "content_id": "a8623506-2cfa-4ae5-9b44-262eae624072",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 2,
+          "content_id": "5d1cf761-8156-4219-bf15-30ca48f78851",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 3,
+          "content_id": "f5cd26fd-d0a4-4bff-8a56-a27cbe5d1fa0",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 4,
+          "content_id": "2969f4e7-4921-4c25-ba7b-dd93edddc5af",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 5,
+          "content_id": "5fd48231-6df7-456e-a9b3-c421641b77b3",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        }
+      ]
+    },
+    {
+      "trial": 3,
+      "status_moved": "5/5",
+      "appeal_logged": "5/5",
+      "unknown_id_status": 200,
+      "detail": [
+        {
+          "i": 1,
+          "content_id": "593e1b4a-4f5a-4cec-84f7-621dcd5b7711",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 2,
+          "content_id": "2fd02daf-8bc0-47b4-8463-3bbc1ab1c808",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 3,
+          "content_id": "2e78f1d3-35fc-4107-8baa-dd9d4eeb7f1c",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 4,
+          "content_id": "6655ddd1-2dfc-4038-ad32-1c4cdd69baba",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        },
+        {
+          "i": 5,
+          "content_id": "b1bc25b0-cb16-41ac-b2fc-46fd4a15889f",
+          "appeal_status": 200,
+          "status_after": "under_review",
+          "appeal_in_log": true,
+          "original_intact": true
+        }
+      ]
+    }
+  ]
+}
