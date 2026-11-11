@@ -998,6 +998,50 @@ rule that let eight evasions past. Tightening it costs false positives;
 loosening it costs evasions. There is no setting that fixes both, only settings
 that choose who pays.
 
+### Were the targets I met too easy?
+
+Three of five were met, and the brief is right that this is the question to
+ask about them.
+
+**Criterion 3 was too easy, and I can show exactly how.** My own note under it
+in `criteria.md` reads *"All six pass as of Milestone 3"* — I wrote that
+criterion **after** building the route and **after** confirming all six cases
+already passed. The only real uncertainty I left myself was "a seventh case I
+didn't think of", and the attack set's twenty malformed inputs all held too,
+so even that didn't materialise. A target I had already met before writing it
+down is the kind the brief warns costs more than a miss would have.
+
+**This is the one I would tighten**, and the attack run says how. 31 requests
+in that run were rejected `text_too_short`, and several genuinely different
+malformed types collapse into one reason: RQ03 (text is a number), RQ04 (text
+is a list) and RQ05 (text is null) all log as `missing_text`. The service
+refuses them correctly and then tells me almost nothing about *why*. A
+tightened version:
+
+> **Criterion 3, tightened:** six malformed inputs return 4xx, never 5xx, and
+> each writes a log entry whose `reason` distinguishes it from the other five.
+> Six requests in, six log entries out, **six distinct reasons.**
+
+That one I would currently miss, which is the point of it.
+
+**Criterion 5 was not too easy, though it looks it.** When I set it,
+`config.py` warned that the high-confidence human label might be unreachable
+at all — a weighted average of two signals can't leave 0.25–0.75 while
+`style_signal` is a stub, and nothing in my calibration set scored at or below
+0.35 under a plain average. It only became reachable because of the split rule
+I chose in Milestone 4, which was not a foregone conclusion when the criterion
+was written.
+
+**Criterion 1 was the strictest option available** — 0 of 10, not 1 or 2 — and
+its limits are stated below rather than hidden.
+
+**No criterion has been revised.** Criterion 2 was measurable and I missed it;
+lowering 0.35 to 0.40 to match the threshold I moved would be the revision the
+brief says costs the point. The tightening of criterion 3 above is proposed for
+the record, not applied retroactively — it would change a MET into a MISS, and
+rewriting a target after seeing the run is the same error in the other
+direction.
+
 ### Arguing against my own verdict on criterion 1
 
 The brief asks for the strongest case against the verdict I reached. Criterion
