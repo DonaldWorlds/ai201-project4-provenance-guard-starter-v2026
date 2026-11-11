@@ -754,19 +754,50 @@ real bug.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. My own writing flagged as AI | 0 of 10 | — | — | — | **NOT RUN** |
+| 1. My own writing flagged as AI | 0 of 10 | 0/10 | 0/10 | 0/10 | **MET** |
 | 2. Clearly-AI vs clearly-human spread | ≥ 0.30 apart, human ≤ 0.35 | 0.2616 / 0.3996 | 0.2616 / 0.3996 | 0.2616 / 0.3996 | **MISSED** |
 | 3. Bad input 4xx not 5xx, all logged | 6 of 6 | 6/6 | 6/6 | 6/6 | **MET** |
 | 4. Appeals move status and log; unknown id 404 | 5 of 5, and 404 | 5/5, **404** | 5/5, **200** | 5/5, **200** | **MISSED** |
 | 5. All three labels, same label each trial | 3 of 3 | 3/3 | 3/3 | 3/3 | **MET** |
 
-**Criterion 1 is not run, and is not a pass.** It says *"of 10 pieces I wrote
-myself"*, and `samples/mine/` is empty. The five files in `samples/` were
-written by Claude to calibrate the signals, so measuring a false-positive rate
-against them would measure Claude's prose, not mine. `scenarios.py` leaves the
-scenario out of the run entirely when that folder is empty, rather than
-reporting 0 of 0 as a pass — the number this criterion exists to produce does
-not exist yet.
+**Criterion 1 — the one I called most important — is MET.** Ten passages I
+wrote myself, pulled from the README and `criteria.md` files of my first three
+AI201 projects, in `samples/mine/`. None of the five files in `samples/` were
+used: those were written by Claude to calibrate the signals, and a
+false-positive rate measured on them would measure Claude's prose.
+
+| file | guess | combined | model | style |
+|---|---|---|---|---|
+| 01.txt | human | 0.3597 | 0.3721 | 0.3472 |
+| 02.txt | unsure | 0.4123 | 0.3019 | 0.5227 |
+| 03.txt | human | 0.3426 | 0.2342 | 0.5438 |
+| 04.txt | human | 0.1766 | 0.1208 | 0.2324 |
+| 05.txt | human | 0.3588 | 0.3429 | 0.3747 |
+| 06.txt | human | 0.1591 | 0.1931 | 0.1251 |
+| 07.txt | human | 0.2392 | 0.1262 | 0.3522 |
+| 08.txt | human | 0.2447 | 0.1098 | 0.4952 |
+| 09.txt | human | 0.3005 | 0.1928 | 0.5006 |
+| 10.txt | human | 0.2412 | 0.2493 | 0.2331 |
+
+**Zero of ten labelled high-confidence AI**, identical across all three
+trials. The highest anything scored was **0.4123**, against an `AI_THRESHOLD`
+of 0.65 — a margin of 0.24, so this is a real pass rather than a near miss.
+
+**Why it passed, and why that is not entirely reassuring.** My `model_score`
+runs 0.11–0.37 across these ten, meaning gpt2 finds my writing *hard* to
+predict. That is the opposite of the failure mode this whole project is built
+around: `plain_human` scored 0.8275 and the attack set's non-native speaker
+(FP03) scored 0.8051 on the same signal. I pass this criterion because of how
+I happen to write, not because the system is safe for people who write
+differently. The writers it accuses are still the writers it accused in
+Milestone 4 — I am simply not one of them.
+
+**Two honest limits on this number.** All ten passages are technical
+reflections about my own coursework, written in one register, so this tests a
+narrower slice of my writing than ten varied pieces would. And they come from
+repositories where I used AI assistance elsewhere in the same files; I selected
+only first-person passages I confirmed I wrote, but that confirmation is mine,
+not something the measurement can verify.
 
 ### Real output from one trial
 
@@ -893,10 +924,11 @@ does not produce a connection error here, it produces a plausible status code,
 and the harness completes and writes a report that looks like data. Checking
 `GET /health` returns JSON before trusting a run is the cheap defence.
 
-**Criterion 1 — NOT RUN. Stage: the test, not the service.** `samples/mine/`
-is empty. This is the criterion I called the most important in Milestone 2 and
-it is the one with no evidence behind it. Recording it as NOT RUN rather than
-leaving the row out is the honest version: the gap is mine.
+**Criterion 1 — MET, stable across all three trials**, with the caveat above:
+it passed on the strength of my own writing being high-perplexity, not because
+the system protects plain writers. Criterion 1 and the three false positives
+in the Milestone 2 attack run are not in tension — they are the same system
+treating two kinds of writer differently.
 
 **Criteria 3 and 5 — MET, stable across all three trials.** 15 bad-input
 requests produced 15 log entries and no 5xx; all three labels were reached by

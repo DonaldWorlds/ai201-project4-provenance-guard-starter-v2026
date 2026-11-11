@@ -1,0 +1,1 @@
+The system also names the source document used for the answer and refuses questions when the best retrieved result is not relevant enough. I tested it with five in-scope questions and five out-of-scope questions. The final relevance cutoff is 0.6, and I kept top-k at 5.

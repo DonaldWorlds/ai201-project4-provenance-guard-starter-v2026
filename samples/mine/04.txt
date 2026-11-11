@@ -1,0 +1,1 @@
+I picked 4 of 5 because the search uses keyword matching, so some valid-looking query phrasings may not retrieve a listing even when related listings exist. A stricter 5 of 5 target would be difficult to guarantee with keyword-based search. --

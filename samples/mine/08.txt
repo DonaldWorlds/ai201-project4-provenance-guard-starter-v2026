@@ -1,0 +1,1 @@
+I picked 4 of 5 because the five out-of-scope questions are about subjects that are clearly unrelated to my campus-life documents. I expect the relevance gate to reject most of them, while allowing one possible mistake because semantic retrieval can sometimes find an unrelated chunk that looks similar.

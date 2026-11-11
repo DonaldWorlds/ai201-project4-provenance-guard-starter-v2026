@@ -1,0 +1,1 @@
+I picked 5 of 5 because an answer should be traceable back to a document in my corpus. When I tested the housing lottery question, the system already identified admin_housing_lottery.txt as the source, so I expect every answer to provide a source.
