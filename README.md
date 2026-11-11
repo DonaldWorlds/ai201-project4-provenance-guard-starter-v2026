@@ -934,6 +934,108 @@ treating two kinds of writer differently.
 requests produced 15 log entries and no 5xx; all three labels were reached by
 the same text in every trial.
 
+### How each verdict was decided
+
+| # | Verdict | How I decided |
+|---|---|---|
+| 1 | MET | Target is 0 of 10, every trial returned 0 of 10. Highest single score 0.4123 against a 0.65 threshold, so no trial was close to the line. |
+| 2 | MISSED | Target needs clearly-human ≤ 0.35; `clearly_human` scored 0.3996 in all three trials. Over is over. The gap also came to 0.2616 against a target of 0.30, so it fails on both clauses. |
+| 3 | MET | 15 bad-input requests across three trials, all 4xx, no 5xx, 15 matching log entries. The sixth case (a non-object body) isn't expressible as a `bodies` entry and is covered by attack RQ07, which returned 400. |
+| 4 | MISSED | The 5-of-5 clause passed in every trial. The 404 clause did not: runs went 404, 200, 200. A criterion with two clauses fails if either fails, and the generous reading — "well, 5 of 5 passed" — is exactly the one the brief warns about. |
+| 5 | MET | All three labels produced by named text, identical in all three trials. |
+
+### Every miss and every broken attack, by stage and mechanism
+
+Eleven attacks broke and two criteria missed. They are not thirteen problems.
+
+| ID | model | style | gap | Stage | Mechanism |
+|---|---|---|---|---|---|
+| EV01 | 0.1635 | 0.5450 | 0.382 | **signal one** | Typos raise perplexity. gpt2 found AI text *surprising* and scored it 0.1635 — more human-looking than most genuine human text. The split rule then leaned toward that reading. |
+| EV02 | 0.5943 | 0.2295 | 0.365 | **signal two** | Breaking sentences up raises `sentence_length_spread`, which my signal reads as human lumpiness. |
+| EV03 | 0.6662 | 0.2442 | 0.422 | **signal two** | A pasted quotation imports another writer's rhythm and punctuation, raising spread and punctuation density together. |
+| EV04 | 0.6114 | 0.5082 | 0.103 | **thresholds** | Both signals leaned AI, neither strongly. No split; the average landed at 0.5598, inside the unsure band. Unusual words pulled signal one just under the line. |
+| EV05 | 0.3212 | 0.1843 | 0.137 | **both signals** | A heavy human editing pass. This one didn't exploit the rule — it beat both measures outright. Heavily edited AI text is not detectable by either. |
+| EV06 | 0.5727 | 0.2893 | 0.283 | **signal two** | One very long sentence and one very short maximises stdev/mean. My coefficient of variation is precisely what this targets. |
+| EV07 | 0.5862 | **0.0079** | 0.578 | **signal two** | `punctuation_density` has no ceiling. Padding drove it past `_PUNCT_RANGE`'s top of 14.0, and `_to_ai_score` clamps anything above that to 0.0 — maximally human. In Milestone 5 I removed this measure's *floor* and never looked at its *top*. |
+| EV09 | 0.7042 | 0.2597 | 0.444 | **signal two** | A human opening paragraph bolted onto AI text. Signal one reads meaning across the whole piece and still said 0.7042; signal two reads surface shape and was dominated by the human paragraph. |
+| FP02 | 0.7387 | 0.6522 | 0.087 | **both, agreeing** | Formal register is both predictable and evenly shaped. Two signals, one underlying property, no disagreement for the rule to resolve. |
+| FP05 | 0.8005 | 0.6832 | 0.117 | **both, agreeing** | Technical documentation is plain and consistent *on purpose*. Same mechanism as FP02 and as `plain_human` in Milestone 4. |
+| FP07 | 0.8816 | 0.5452 | 0.336 | **signal one** | Deliberate repetition drives perplexity down hard. The split rule *did* fire here and pulled the score down — and it still cleared 0.65 by 0.013. |
+
+**Criterion 2 — stage: the thresholds.** Not pipeline drift; all trials identical
+to four decimals. In unit 7 Milestone 5 I raised `HUMAN_THRESHOLD` 0.35 → 0.40
+so `clearly_human` would receive the human *label*, and never checked it
+against criterion 2, written earlier and still saying 0.35.
+
+**Criterion 4 — stage: the route.** `app.py:360` asks whether *any* entry
+carries this content_id rather than whether a *decision* does, and the 404 path
+writes a rejection carrying that id.
+
+### The pattern — two problems, not thirteen
+
+**Pattern A: the style signal measures shape, and shape is cheap to change.**
+EV02, EV03, EV06, EV07, EV09 — five of the eight evasion breaks — are the same
+attack with different surface edits. Each leaves the meaning untouched and
+moves `style_signal` to the human end. Add EV01, where the same trick worked on
+signal *one* via typos, and six of eight are "game one signal cheaply".
+
+**And my combining rule is the amplifier.** In six of the eight breaks the two
+signals disagreed by more than `DISAGREEMENT_GAP`, so `combine_signals` stopped
+averaging and leaned 65% toward the gamed reading. An attacker does not need to
+beat both signals — gaming one and *creating a disagreement* is enough.
+
+**Pattern B: both signals measure the same underlying property, so they fail
+together on plain human writing.** FP02, FP05 and `plain_human` all had both
+signals high and agreeing, no split, average straight over the line. What both
+measure is really *writes plainly and consistently*, and real people do that
+for real reasons — formality, a technical register, a second language.
+
+**The two patterns are connected, and that is the whole finding.** The split
+rule is the single lever between them. It is what lets Pattern A through, and
+it is the only thing stopping Pattern B from being worse — FP03, a non-native
+speaker with `model_score` 0.8051, was saved from accusation by exactly the
+rule that let eight evasions past. Tightening it costs false positives;
+loosening it costs evasions. There is no setting that fixes both, only settings
+that choose who pays.
+
+### Arguing against my own verdict on criterion 1
+
+The brief asks for the strongest case against the verdict I reached. Criterion
+1 is the one worth attacking, because MET is the comfortable answer.
+
+**The case that criterion 1 should be MISSED — or at least not credited:**
+
+1. **I did not choose the samples.** Claude selected them, filtering for
+   "first-person, 40 or more words". First-person reflective prose has more
+   varied sentence structure than expository prose — and expository writing is
+   exactly what FP05, my worst false positive, was. The filter may select for
+   passages that score human.
+2. **Ten paragraphs from six documents are not ten independent pieces.**
+   Passages from one README share register, topic and the hour they were
+   written. The effective sample is closer to n=6, or n=3 projects.
+3. **The authorship confirmation was one blanket yes**, not per-passage, over
+   files where AI assistance was used elsewhere. One contaminated passage
+   scoring human biases the result in the flattering direction.
+4. **41–89 words is short.** `MIN_WORDS` is 40 and `DETECTOR_MAX_TOKENS` is
+   400; these sit at the bottom of the range where perplexity is stable.
+
+**Evidence I went and got.** Point 2 — sampling variance within the filter —
+is settled. I scored the **33 first-person passages that were *not* chosen**:
+32 human, 1 unsure, **0 at or above the AI threshold**, range 0.0674–0.4934.
+Which ten were picked did not drive the result; all 43 pass.
+
+**Evidence that would settle the rest, and which I do not have.** Point 1 needs
+non-first-person prose I wrote, and I cannot reliably separate my own expository
+writing in those files from the starter templates around it. Points 3 and 4
+need per-passage attestation and longer pieces chosen by me before seeing any
+score.
+
+**The verdict stands at MET, with its reach stated plainly:** 43 of 43
+first-person passages I wrote scored below the AI threshold. That is a real
+result about *this register of my writing*. It is not evidence that my
+expository writing would pass, and FP05 is a direct reason to doubt it would.
+
+
 ---
 
 ## The Improvement
